@@ -3,7 +3,7 @@
 **Nuha Aburamadan** | BCS 309 Algorithms I — Spring 2026  
 Interactive step-by-step algorithm visualizer built for the final project.
 
-🔗 **[Live Demo](https://05nuha.github.io/your-repo-name/)**
+🔗 **[Live Demo]([https://05nuha.github.io/your-repo-name/](https://05nuha.github.io/Bin_Packing_Problem/))**
 
 ---
 
@@ -13,30 +13,6 @@ This tool teaches Bin Packing — one of the most practical NP-complete problems
 
 ---
 
-## What It Covers
-
-### CLO-5 — NP-Completeness Proof
-- Step-by-step proof that Bin Packing is in NP (certificate + verifier)
-- Polynomial-time reduction from Partition → Bin Packing
-- Forward and backward directions proved with concrete examples
-- Interactive reduction demo with live animation
-
-### CLO-4 — Algorithm Visualization
-- **Brute Force** — exact optimal via backtracking
-- **First-Fit** — greedy, original order
-- **First-Fit Decreasing (FFD)** — greedy, sorted largest-first
-- **Best-Fit** — greedy, tightest packing
-- Step-by-step animation with pseudocode highlighting
-- Side-by-side comparison of all 4 algorithms
-
-### CLO-3 — Algorithm Design
-- Greedy paradigm identified and justified
-- Why sorting in decreasing order helps (large items first)
-- Approximation ratio (11/9)·OPT explained with proof sketch
-- Counterexample showing FFD is not always optimal
-- Waste heatmap showing packing efficiency visually
-
----
 
 ## Features
 
@@ -74,18 +50,6 @@ This tool teaches Bin Packing — one of the most practical NP-complete problems
 
 ---
 
-## How to Use
-
-1. Choose an algorithm mode from the left panel
-2. Load a preset or enter custom item sizes (space-separated, between 0 and 1)
-3. Click **Build Steps** to generate the animation
-4. Click **Step ▶** to go one step at a time, or **Play** to animate automatically
-5. Hover any pseudocode line for a detailed explanation
-6. Click **⚡ Run All 4** to compare all algorithms side by side
-7. Switch to the **Learn tab** → **🧠 Test my understanding** to take the quiz
-
----
-
 ## Tech Stack
 
 - HTML5, CSS3, Vanilla JavaScript (ES6+)
@@ -100,11 +64,3 @@ This tool teaches Bin Packing — one of the most practical NP-complete problems
 2. Go to **Settings → Pages → Source → main → / (root) → Save**
 3. Your tool will be live at `https://<username>.github.io/<repo-name>/`
 
----
-
-## References
-
-- Garey, M. R. & Johnson, D. S. (1979). *Computers and Intractability*. W. H. Freeman.
-- Johnson, D. S. (1973). Near-optimal bin packing algorithms. PhD thesis, MIT.
-- Simchi-Levi, D. (1994). New worst-case results for the bin-packing problem. *Naval Research Logistics*, 41(4).
-- Karp, R. M. (1972). Reducibility among combinatorial problems. *Complexity of Computer Computations*.
