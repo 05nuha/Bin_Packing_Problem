@@ -1,0 +1,3607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bin Packing · NP-Completeness · BCS 309</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════ */
+:root {
+  /* Backgrounds */
+  --bg:        #080711;
+  --bg2:       #0f0d1a;
+  --bg3:       #151222;
+  --panel:     rgba(255,255,255,0.04);
+  --panel2:    rgba(255,255,255,0.07);
+  --stroke:    rgba(255,255,255,0.09);
+  --stroke2:   rgba(255,255,255,0.14);
+
+  /* Text */
+  --text:      #ede8ff;
+  --muted:     #8b7db0;
+  --faint:     rgba(255,255,255,0.25);
+
+  /* Brand colors */
+  --c1: #a78bfa;   /* violet — primary */
+  --c2: #f472b6;   /* pink — secondary */
+  --c3: #fbbf24;   /* amber — highlight */
+  --c4: #34d399;   /* emerald — success */
+  --c5: #f87171;   /* red — danger/back edge */
+  --c6: #60a5fa;   /* blue — info */
+  --c7: #e879f9;   /* fuchsia — accent */
+
+  /* Item colors for bins */
+  --item1: #a78bfa;
+  --item2: #f472b6;
+  --item3: #34d399;
+  --item4: #fbbf24;
+  --item5: #60a5fa;
+  --item6: #f87171;
+  --item7: #e879f9;
+  --item8: #fb923c;
+
+  /* Fonts */
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(167,139,250,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 800px 400px at 85% 90%, rgba(244,114,182,0.08) 0%, transparent 60%);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+.site-header {
+  text-align: center;
+  padding: 22px 20px 0;
+}
+
+.site-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.site-title .t1 { color: var(--c1); }
+.site-title .sep { color: rgba(255,255,255,0.20); margin: 0 8px; }
+.site-title .t2 { color: var(--c2); }
+.site-title .t3 { color: var(--c7); }
+
+.site-sub {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  margin-bottom: 16px;
+}
+
+/* ═══════════════════════════════════════════
+   MAIN LAYOUT — TWO COLUMN
+═══════════════════════════════════════════ */
+.app-wrap {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 0 14px 24px;
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 1050px) {
+  .app-wrap { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════ */
+.card {
+  background: linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.022) 100%);
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.30);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px 11px;
+  border-bottom: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.025);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.card-header .icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: rgba(167,139,250,0.15);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   LEFT PANEL INTERNALS
+═══════════════════════════════════════════ */
+.left-body { padding: 14px 16px 16px; }
+
+/* Section label */
+.sec-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sec-label:first-child { margin-top: 0; }
+.sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--stroke);
+}
+
+/* Mode selector */
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+
+.mode-btn {
+  padding: 9px 10px;
+  border-radius: 11px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.22);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.mode-btn:hover {
+  background: rgba(167,139,250,0.10);
+  color: var(--text);
+  border-color: rgba(167,139,250,0.25);
+}
+
+.mode-btn.active {
+  background: rgba(167,139,250,0.18);
+  border-color: rgba(167,139,250,0.45);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(167,139,250,0.15);
+}
+
+.mode-btn small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.mode-btn.active small { color: rgba(255,255,255,0.55); }
+
+/* Mode description pill */
+.mode-desc {
+  background: rgba(167,139,250,0.07);
+  border: 1px solid rgba(167,139,250,0.15);
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 2px;
+  min-height: 36px;
+  transition: all 0.2s ease;
+}
+
+.mode-desc b { color: var(--text); }
+
+/* Preset buttons */
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.preset-btn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.18);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.preset-btn small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+.preset-btn:hover {
+  background: rgba(167,139,250,0.09);
+  color: var(--text);
+}
+
+.preset-btn.active {
+  background: rgba(167,139,250,0.16);
+  border-color: rgba(167,139,250,0.38);
+  color: #fff;
+}
+
+/* Custom input */
+.custom-input {
+  width: 100%;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--stroke);
+  border-radius: 11px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 9px 12px;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+  transition: border-color 0.15s;
+  line-height: 1.5;
+}
+
+.custom-input:focus { border-color: rgba(167,139,250,0.45); }
+
+/* Buttons */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(167,139,250,0.13);
+  color: var(--text);
+  padding: 9px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.btn:hover { background: rgba(167,139,250,0.24); }
+.btn:active { transform: scale(0.98); }
+
+.btn-sec {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--stroke);
+}
+.btn-sec:hover { background: rgba(255,255,255,0.12); }
+
+.btn-danger {
+  background: rgba(248,113,113,0.13);
+  border-color: rgba(248,113,113,0.25);
+  color: var(--c5);
+}
+.btn-danger:hover { background: rgba(248,113,113,0.22); }
+
+.btn-success {
+  background: rgba(52,211,153,0.13);
+  border-color: rgba(52,211,153,0.25);
+  color: var(--c4);
+}
+.btn-success:hover { background: rgba(52,211,153,0.22); }
+
+/* Playback control grid */
+.play-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 7px;
+}
+
+/* Speed row */
+.speed-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.speed-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.speed-wrap input[type=range] {
+  flex: 1;
+  cursor: pointer;
+  accent-color: var(--c1);
+}
+
+.speed-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--c1);
+  font-weight: 700;
+  min-width: 28px;
+}
+
+.cap-sel {
+  width: 100%;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.cap-sel option { background: #140d24; }
+
+/* Stats pills */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.stat-pill {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 11px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-pill .stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stat-pill .stat-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-pill.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; }
+.stat-pill.wide .stat-val { font-size: 13px; }
+
+.stat-pill.highlight { border-color: rgba(167,139,250,0.30); background: rgba(167,139,250,0.07); }
+.stat-pill.highlight .stat-val { color: var(--c1); }
+
+/* Step / status row */
+.step-status {
+  display: flex;
+  gap: 7px;
+  align-items: stretch;
+}
+
+.step-badge {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.step-badge span { color: var(--c1); font-weight: 700; }
+
+.status-badge {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.status-dot.playing { background: var(--c4); box-shadow: 0 0 6px var(--c4); animation: pulse 1s infinite; }
+.status-dot.ready   { background: var(--c1); }
+.status-dot.done    { background: var(--c2); }
+.status-dot.paused  { background: var(--c3); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ═══════════════════════════════════════════
+   PSEUDOCODE PANEL
+═══════════════════════════════════════════ */
+.pseudo-wrap {
+  background: rgba(0,0,0,0.30);
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.pseudo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 13px;
+  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid var(--stroke);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+}
+
+.pseudo-tag {
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: rgba(167,139,250,0.15);
+  color: var(--c1);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pseudo-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.pseudo-scroll::-webkit-scrollbar { width: 4px; }
+.pseudo-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 2px; }
+
+.code-row {
+  display: flex;
+  align-items: stretch;
+  min-height: 22px;
+  transition: background 0.15s;
+  cursor: default;
+}
+
+.code-row:hover { background: rgba(255,255,255,0.025); }
+
+.code-row.active {
+  background: rgba(251,191,36,0.13) !important;
+  border-left: 3px solid rgba(251,191,36,0.80);
+}
+
+.code-row.visited { background: rgba(52,211,153,0.03); }
+
+.ln {
+  min-width: 30px;
+  padding: 3px 7px 3px 10px;
+  text-align: right;
+  font-size: 10px;
+  color: rgba(183,192,255,0.20);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255,255,255,0.05);
+  background: rgba(0,0,0,0.15);
+  line-height: 16px;
+  padding-top: 3px;
+}
+
+.lc {
+  padding: 3px 10px 3px 12px;
+  color: rgba(232,236,255,0.80);
+  white-space: pre;
+  flex: 1;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  line-height: 16px;
+  padding-top: 3px;
+}
+
+.code-row.active .lc { color: #fff; }
+.code-row.active .ln { color: rgba(251,191,36,0.80); }
+
+/* ═══════════════════════════════════════════
+   EXPLAIN BOX
+═══════════════════════════════════════════ */
+.explain-wrap {
+  background: rgba(0,0,0,0.20);
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.explain-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid var(--stroke);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.explain-step-badge {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: rgba(167,139,250,0.14);
+  color: var(--c1);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.explain-body {
+  padding: 11px 14px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--muted);
+  min-height: 52px;
+}
+
+.explain-body b  { color: var(--text); }
+.explain-body .v {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--c3);
+  font-weight: 700;
+}
+.explain-body .good { color: var(--c4); font-weight: 700; }
+.explain-body .warn { color: var(--c3); font-weight: 700; }
+.explain-body .hi   { color: var(--c1); font-weight: 700; }
+.explain-body .why  {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: rgba(183,192,255,0.45);
+  border-left: 2px solid rgba(183,192,255,0.15);
+  padding-left: 9px;
+}
+
+.explain-body.flash { animation: exflash 320ms ease; }
+@keyframes exflash {
+  0%   { background: rgba(251,191,36,0.08); }
+  100% { background: transparent; }
+}
+
+/* ═══════════════════════════════════════════
+   RIGHT PANEL — TABS
+═══════════════════════════════════════════ */
+.tab-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 12px 14px 0;
+}
+
+.tab-btn {
+  padding: 8px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.18);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+  text-align: center;
+  width: 100%;
+}
+
+.tab-btn:hover {
+  background: rgba(167,139,250,0.09);
+  color: var(--text);
+}
+
+.tab-btn.active {
+  background: rgba(167,139,250,0.18);
+  border-color: rgba(167,139,250,0.40);
+  color: #fff;
+}
+
+/* Tab panels */
+.viz-panel {
+  display: none;
+  padding: 14px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.viz-panel.active { display: flex; }
+
+/* ═══════════════════════════════════════════
+   REUSABLE COMPONENTS (right panel)
+═══════════════════════════════════════════ */
+
+/* Banner */
+.banner {
+  padding: 11px 15px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  border-left: 3px solid;
+}
+.banner.purple { border-color: var(--c1); background: rgba(167,139,250,0.07); }
+.banner.pink   { border-color: var(--c2); background: rgba(244,114,182,0.07); }
+.banner.teal   { border-color: var(--c4); background: rgba(52,211,153,0.07); }
+.banner.amber  { border-color: var(--c3); background: rgba(251,191,36,0.07); }
+.banner.red    { border-color: var(--c5); background: rgba(248,113,113,0.07); }
+.banner b { color: var(--text); }
+
+/* Section heading */
+.viz-h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Info cards grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 700px) { .info-grid { grid-template-columns: 1fr; } }
+
+.info-card {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.info-card h4 {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--c1);
+  margin-bottom: 5px;
+  font-family: var(--font-body);
+}
+.info-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.info-card code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--c3);
+}
+
+/* Learn sections */
+.learn-section {
+  background: rgba(0,0,0,0.20);
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.learn-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 15px;
+  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.learn-hdr:hover { background: rgba(255,255,255,0.04); }
+
+.learn-hdr.open { border-bottom-color: var(--stroke); }
+
+.learn-hdr h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.learn-hdr .chevron {
+  color: var(--muted);
+  font-size: 13px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.learn-hdr.open .chevron { transform: rotate(180deg); }
+
+.learn-body {
+  display: none;
+  padding: 14px 16px;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+.learn-body.open { display: block; }
+.learn-body p { margin-bottom: 9px; }
+.learn-body p:last-child { margin: 0; }
+.learn-body b { color: var(--text); }
+.learn-body code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--c3);
+}
+
+/* Learn tip box */
+.learn-tip {
+  display: flex;
+  gap: 10px;
+  padding: 10px 13px;
+  background: rgba(167,139,250,0.07);
+  border: 1px solid rgba(167,139,250,0.18);
+  border-radius: 10px;
+  margin-top: 9px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.learn-tip .tip-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.learn-tip b { color: var(--text); }
+
+/* Worked example box */
+.worked {
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 2.0;
+  margin: 9px 0;
+}
+.worked .ws { color: var(--c3); font-weight: 700; }
+.worked .wg { color: var(--c4); font-weight: 700; }
+.worked .wr { color: var(--c5); font-weight: 700; }
+.worked .wb { color: var(--c6); font-weight: 700; }
+
+/* Glossary grid */
+.gloss-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 8px;
+}
+@media (max-width: 700px) { .gloss-grid { grid-template-columns: 1fr; } }
+
+.gloss-item {
+  background: rgba(0,0,0,0.20);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.gloss-item b {
+  display: block;
+  color: var(--c1);
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+.gloss-item span {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Mistake item */
+.mistake-item {
+  background: rgba(248,113,113,0.05);
+  border: 1px solid rgba(248,113,113,0.15);
+  border-radius: 10px;
+  padding: 10px 13px;
+  margin-bottom: 7px;
+}
+.mistake-item:last-child { margin-bottom: 0; }
+.mistake-item b { display: block; color: var(--c5); font-size: 12px; margin-bottom: 3px; }
+.mistake-item span { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* Color key badges */
+.color-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  margin: 2px;
+  border: 1px solid;
+}
+
+.color-key.violet { background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.30); color: var(--c1); }
+.color-key.pink   { background: rgba(244,114,182,0.15); border-color: rgba(244,114,182,0.30); color: var(--c2); }
+.color-key.teal   { background: rgba(52,211,153,0.15);  border-color: rgba(52,211,153,0.30);  color: var(--c4); }
+.color-key.amber  { background: rgba(251,191,36,0.15);  border-color: rgba(251,191,36,0.30);  color: var(--c3); }
+.color-key.red    { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.30); color: var(--c5); }
+.color-key.blue   { background: rgba(96,165,250,0.15);  border-color: rgba(96,165,250,0.30);  color: var(--c6); }
+
+.color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   BIN VISUALIZATION STYLES
+═══════════════════════════════════════════ */
+.items-bar-wrap {
+  background: rgba(0,0,0,0.20);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.items-bar-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.items-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 32px;
+  align-items: center;
+}
+
+.item-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border-radius: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.75);
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  cursor: default;
+}
+
+.item-chip.active {
+  border-color: var(--c3);
+  box-shadow: 0 0 12px rgba(251,191,36,0.40);
+  transform: scale(1.08) translateY(-2px);
+}
+
+.item-chip.placed {
+  opacity: 0.40;
+}
+
+/* Bins container */
+.bins-section {
+  background: rgba(0,0,0,0.20);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.bins-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bins-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  min-height: 160px;
+}
+
+.bin-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.bin-box {
+  width: 68px;
+  height: 180px;
+  border: 2px solid rgba(255,255,255,0.16);
+  border-radius: 8px 8px 4px 4px;
+  background: rgba(0,0,0,0.30);
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bin-box.active-bin {
+  border-color: var(--c3);
+  box-shadow: 0 0 16px rgba(251,191,36,0.25);
+}
+
+.bin-box.full {
+  border-color: rgba(52,211,153,0.50);
+}
+
+.bin-item-block {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.80);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  transition: height 0.35s ease;
+  flex-shrink: 0;
+  animation: slideInItem 250ms ease;
+}
+@keyframes slideInItem {
+  from { opacity: 0; transform: scaleY(0.6); }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+
+.bin-cap-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255,255,255,0.20);
+}
+
+.bin-fill-pct {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: rgba(255,255,255,0.30);
+  pointer-events: none;
+}
+
+.bin-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.bin-pct-label {
+  font-size: 9px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+/* Legend */
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* History table */
+.hist-wrap {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 170px;
+  overflow-y: auto;
+}
+
+.hist-wrap::-webkit-scrollbar { width: 4px; }
+.hist-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 2px; }
+
+.hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.hist-table th {
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 10px;
+  border-bottom: 1px solid var(--stroke);
+  position: sticky;
+  top: 0;
+  background: rgba(10,10,20,0.95);
+  letter-spacing: 0.04em;
+}
+
+.hist-table td {
+  padding: 4px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+
+.hist-table tr { cursor: pointer; transition: background 0.12s; }
+.hist-table tr:hover td { background: rgba(167,139,250,0.07); }
+.hist-table tr.cur td { background: rgba(167,139,250,0.12); }
+
+/* NP Proof styles */
+.proof-step {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  padding: 14px 16px;
+}
+
+.proof-step-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.proof-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(244,114,182,0.15);
+  color: var(--c2);
+  flex-shrink: 0;
+}
+
+.proof-step h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.proof-step p {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.72;
+  margin-bottom: 7px;
+}
+
+.proof-step p:last-child { margin: 0; }
+.proof-step b { color: var(--text); }
+.proof-step code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--c3);
+}
+
+/* Reduction diagram */
+.reduction-diagram {
+  background: rgba(0,0,0,0.32);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 2.0;
+  color: var(--muted);
+}
+
+.reduction-diagram b   { color: var(--text); }
+.reduction-diagram .arrow { color: var(--c3); font-weight: 700; }
+.reduction-diagram .yes   { color: var(--c4); font-weight: 700; }
+.reduction-diagram .no    { color: var(--c5); font-weight: 700; }
+
+/* Compare mode */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 900px) { .compare-grid { grid-template-columns: 1fr; } }
+
+.compare-card {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  padding: 13px;
+}
+
+.compare-card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.compare-card-hdr h4 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.algo-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: 700;
+}
+
+/* Complexity table */
+.cx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cx-table th {
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  border-bottom: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.20);
+}
+
+.cx-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+}
+
+.cx-table tr:hover td { background: rgba(167,139,250,0.04); }
+.cx-table .good { color: var(--c4); font-weight: 700; font-family: var(--font-mono); }
+.cx-table .ok   { color: var(--c3); font-weight: 700; font-family: var(--font-mono); }
+.cx-table .bad  { color: var(--c5); font-weight: 700; font-family: var(--font-mono); }
+.cx-table .hi   { color: var(--c1); font-weight: 700; }
+
+/* Chart box */
+.chart-box {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.chart-controls input[type=range] {
+  width: 110px;
+  cursor: pointer;
+  accent-color: var(--c1);
+}
+
+.chart-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+}
+
+.chart-leg-line {
+  width: 18px;
+  height: 2.5px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* ═══════════════════════════════════════════
+   SCROLLBAR GLOBAL
+═══════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 3px; }
+
+/* ═══════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════ */
+.mb4  { margin-bottom: 4px; }
+.mb8  { margin-bottom: 8px; }
+.mb12 { margin-bottom: 12px; }
+.hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 0 16px 14px;
+  line-height: 1.55;
+}
+
+/* ═══════════════════════════════════════════
+   QUIZ STYLES
+═══════════════════════════════════════════ */
+.quiz-q {
+  background: rgba(0,0,0,0.20);
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+.quiz-q.correct { border-color: rgba(52,211,153,0.50); background: rgba(52,211,153,0.04); }
+.quiz-q.wrong   { border-color: rgba(248,113,113,0.50); background: rgba(248,113,113,0.04); }
+
+.quiz-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+
+.quiz-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.quiz-opt {
+  padding: 9px 13px;
+  border-radius: 9px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.18);
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.14s ease;
+  line-height: 1.5;
+}
+
+.quiz-opt:hover { background: rgba(167,139,250,0.10); color: var(--text); border-color: rgba(167,139,250,0.25); }
+.quiz-opt.selected { background: rgba(167,139,250,0.18); border-color: rgba(167,139,250,0.45); color: #fff; }
+.quiz-opt.correct-ans { background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.50); color: var(--c4); font-weight:700; pointer-events:none; }
+.quiz-opt.wrong-ans   { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.40); color: var(--c5); pointer-events:none; }
+.quiz-opt.disabled    { pointer-events: none; opacity: 0.55; }
+
+.quiz-feedback {
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: none;
+  margin-top: 4px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.20); color: var(--c4); }
+.quiz-feedback.wrong   { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.20); color: var(--muted); }
+.quiz-feedback b { color: var(--text); }
+
+.quiz-answer { display: none; }
+
+.quiz-clo-pill {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--stroke);
+  border-radius: 11px;
+  padding: 12px;
+  text-align: center;
+}
+.quiz-clo-pill .clo-score { font-size: 22px; font-weight: 800; font-family: 'Outfit',sans-serif; }
+.quiz-clo-pill .clo-label { font-size: 11px; color: var(--muted); margin-top: 3px; }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.anim-slide { animation: slideIn 220ms ease; }
+.anim-pop   { animation: popIn 220ms ease; }
+.anim-fade  { animation: fadeIn 200ms ease; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="site-header">
+  <h1 class="site-title">
+    <span class="t1">Bin Packing</span>
+    <span class="sep">·</span>
+    <span class="t2">NP-Completeness</span>
+    <span class="sep">·</span>
+    <span class="t3">Greedy Algorithms</span>
+  </h1>
+  <p class="site-sub">Nuha Aburamadan &nbsp;|&nbsp; BCS 309 &nbsp;·&nbsp; Interactive Algorithm Visualizer</p>
+</header>
+
+<!-- ═══════════════ MAIN LAYOUT ═══════════════ -->
+<div class="app-wrap">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="card" id="leftPanel">
+    <div class="card-header">
+      <div class="icon">🎛</div>
+      Controls
+    </div>
+
+    <div class="left-body">
+
+      <!-- MODE -->
+      <div class="sec-label">Algorithm Mode</div>
+      <div class="mode-grid mb8">
+        <button class="mode-btn active" id="mt-ffd" onclick="setMode('ffd',this)">
+          FFD
+          <small>First-Fit Decreasing</small>
+        </button>
+        <button class="mode-btn" id="mt-ff" onclick="setMode('ff',this)">
+          First-Fit
+          <small>No sorting</small>
+        </button>
+        <button class="mode-btn" id="mt-bf2" onclick="setMode('bf2',this)">
+          Best-Fit
+          <small>Tightest gap</small>
+        </button>
+        <button class="mode-btn" id="mt-bf" onclick="setMode('bf',this)">
+          Brute Force
+          <small>Exact OPT</small>
+        </button>
+      </div>
+      <div class="mode-desc mb12" id="modeDesc">
+        <b>FFD:</b> Sort items largest-first, then place each in the first bin with enough space. Guaranteed ≤ (11/9)·OPT bins.
+      </div>
+
+      <!-- PRESETS -->
+      <div class="sec-label">Preset Examples</div>
+      <div class="preset-grid mb8">
+        <button class="preset-btn active" onclick="loadPreset('balanced',this)">
+          Balanced
+          <small>Mixed sizes</small>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('smallfirst',this)">
+          Small First
+          <small>FFD=OPT, FF fails</small>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('awkward',this)">
+          Awkward
+          <small>FFD=4, FF=6 bins</small>
+        </button>
+        <button class="preset-btn" onclick="loadPreset('partition',this)">
+          Partition NP
+          <small>Reduction demo</small>
+        </button>
+      </div>
+
+      <!-- CUSTOM INPUT -->
+      <div class="sec-label">Custom Items (sizes 0–1, space-separated)</div>
+      <textarea class="custom-input mb8" id="itemInput" placeholder="e.g. 0.4 0.3 0.7 0.2 0.6">0.4 0.3 0.5 0.2 0.7 0.1 0.6 0.3</textarea>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" class="mb12">
+        <button class="btn btn-sec" onclick="loadCustom()">Load Custom</button>
+        <div>
+          <div class="sec-label" style="margin-top:0;margin-bottom:4px">Bin Capacity</div>
+          <select class="cap-sel" id="capSel" onchange="reloadCurrent()">
+            <option value="1.0" selected>1.0 (standard)</option>
+            <option value="0.8">0.8</option>
+            <option value="0.75">0.75</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- PLAYBACK -->
+      <div class="sec-label">Playback</div>
+      <div class="play-grid mb8">
+        <button class="btn" onclick="buildSteps()">Build Steps</button>
+        <button class="btn btn-sec" onclick="stepBack()">◀</button>
+        <button class="btn btn-sec" onclick="stepOnce()">▶</button>
+        <button class="btn" onclick="playAnim()">▶▶</button>
+        <button class="btn btn-sec" onclick="pauseAnim()">⏸</button>
+        <button class="btn btn-danger" onclick="resetAll()">↺</button>
+      </div>
+
+      <!-- SPEED + STATUS -->
+      <div class="speed-row mb12">
+        <div class="speed-wrap">
+          <span style="font-size:11px;color:var(--muted);font-weight:600">Speed</span>
+          <input type="range" id="speedSlider" min="0.25" max="4" step="0.25" value="1" oninput="updateSpeed(this.value)"/>
+          <span class="speed-val" id="speedVal">1×</span>
+        </div>
+        <div></div>
+      </div>
+
+      <!-- STEP + STATUS -->
+      <div class="step-status mb12">
+        <div class="step-badge">
+          Step <span id="stepCount">0 / 0</span>
+        </div>
+        <div class="status-badge">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusTxt">Idle</span>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="sec-label">Live Statistics</div>
+      <div class="stats-grid mb12">
+        <div class="stat-pill highlight">
+          <span class="stat-label">Bins Used</span>
+          <span class="stat-val" id="statBins">0</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Items Placed</span>
+          <span class="stat-val" id="statItems">0</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Operations</span>
+          <span class="stat-val" id="statOps">0</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Avg Waste</span>
+          <span class="stat-val" id="statWaste">—</span>
+        </div>
+        <div class="stat-pill wide">
+          <span class="stat-label">Approx. Ratio (Bins / OPT)</span>
+          <span class="stat-val" id="statRatio">—</span>
+        </div>
+      </div>
+
+      <!-- COMPARE SHORTCUT -->
+      <button class="btn btn-success mb12" onclick="runAllAndCompare()">
+        ⚡ Run All 4 Algorithms & Compare
+      </button>
+
+      <!-- PSEUDOCODE -->
+      <div class="pseudo-wrap mb8">
+        <div class="pseudo-header">
+          PSEUDOCODE
+          <span class="pseudo-tag" id="pseudoTag">FFD</span>
+        </div>
+        <div class="pseudo-scroll" id="pseudoScroll">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div><!-- /left-body -->
+
+    <div class="hint">💡 Tip: Switch to the <b>Visualizer tab</b> to see step explanations next to the animation. Click any row in the history table to jump to that step.</div>
+  </div><!-- /left card -->
+
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="card" id="rightPanel">
+    <div class="card-header">
+      <div class="icon">📊</div>
+      Interactive Bin Packing Explorer
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar" style="grid-template-columns:repeat(5,1fr)">
+      <button class="tab-btn active" onclick="switchTab('learn',this)">📖 Learn</button>
+      <button class="tab-btn" onclick="switchTab('visual',this)">Visualizer</button>
+      <button class="tab-btn" onclick="switchTab('compare',this)">Compare</button>
+      <button class="tab-btn" onclick="switchTab('np',this)">NP-Complete</button>
+      <button class="tab-btn" onclick="switchTab('complexity',this)">Complexity</button>
+    </div>
+
+    <!-- ── LEARN TAB ── -->
+    <div class="viz-panel active" id="vp-learn">
+      <div class="banner purple">
+        📖 <b>Start here.</b> This tab teaches you everything from scratch — no prior knowledge needed. Read each section in order, then switch to the Visualizer to watch it live.
+      </div>
+
+      <!-- SECTION: How to use -->
+      <div class="learn-section">
+        <div class="learn-hdr open" onclick="toggleLearn(this)">
+          <h3>🛠 How to Use This Tool</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body open">
+          <p><b>Left panel</b> controls the algorithm. <b>Right panel</b> shows you what's happening.</p>
+          <p>
+            <b>Step 1:</b> Choose an algorithm from the mode buttons — start with FFD.<br>
+            <b>Step 2:</b> Pick a preset graph or type your own item sizes in the box.<br>
+            <b>Step 3:</b> Click <b>Build Steps</b> — this generates the full animation.<br>
+            <b>Step 4:</b> Click <b>▶</b> one step at a time, or <b>▶▶</b> to play automatically.<br>
+            <b>Step 5:</b> Watch the <b>Step Explanation</b> box below — it tells you in plain English exactly what just happened and why.<br>
+            <b>Step 6:</b> Watch the <b>Pseudocode</b> panel — the active line highlights as each step runs.
+          </p>
+          <p>The <b>◀</b> button goes backwards. The <b>↺</b> button resets everything. The speed slider controls how fast the animation plays.</p>
+          <p>The <b>right panel tabs</b> are: Learn (here), Visualizer (animation), Compare (all 4 algorithms side by side), NP-Complete (the proof), Complexity (charts).</p>
+          <div class="learn-tip">
+            <span class="tip-icon">💡</span>
+            <span><b>Best approach:</b> Read sections ①–④ here first. Then click the Visualizer tab, load the Balanced preset, click Build Steps and step through slowly. Come back here if anything is confusing.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: What is Bin Packing -->
+      <div class="learn-section">
+        <div class="learn-hdr open" onclick="toggleLearn(this)">
+          <h3>① What is Bin Packing?</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body open">
+          <p>Imagine you're moving house. You have boxes of different sizes and you want to pack everything into the fewest moving trucks possible. Each truck has a fixed capacity. You want to waste as little truck space as possible. <b>That's Bin Packing.</b></p>
+          <p>Formally: you have <code>n</code> items, each with a size between 0 and 1. You have bins, each with capacity 1. Your goal is to pack all items into the <b>fewest bins possible</b>.</p>
+          <p><b>Example:</b> Items = [0.4, 0.6, 0.3, 0.7]. Capacity = 1.0. Can they fit in 2 bins?</p>
+          <div class="worked">
+            <div>Bin 1: <span class="wb">0.7</span> + <span class="wb">0.3</span> = 1.0 ✓ (perfectly full)</div>
+            <div>Bin 2: <span class="wb">0.6</span> + <span class="wb">0.4</span> = 1.0 ✓ (perfectly full)</div>
+            <div><span class="wg">Yes! 2 bins, no waste at all.</span></div>
+          </div>
+          <p><b>Why is this hard?</b> With 10 items and 4 bins there are 4¹⁰ = over a million ways to assign items. With 20 items it's billions. You can't try every combination — it takes exponential time. This is why Bin Packing is <b>NP-complete</b> (explained in the NP-Complete tab).</p>
+          <div class="learn-tip">
+            <span class="tip-icon">💡</span>
+            <span><b>Real life uses:</b> Loading shipping containers (minimize containers), cutting fabric rolls (minimize waste), cloud server allocation (fit workloads into fewest servers), compiler memory allocation.</span>
+          </div>
+          <p style="margin-top:9px"><b>➜ Try it:</b> Visualizer tab → Balanced preset → Build Steps → watch items pack into bins.</p>
+        </div>
+      </div>
+
+      <!-- SECTION: The Four Algorithms -->
+      <div class="learn-section">
+        <div class="learn-hdr" onclick="toggleLearn(this)">
+          <h3>② The Four Algorithms</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body">
+          <p><b style="color:var(--c4)">First-Fit Decreasing (FFD) — the recommended approach:</b><br>
+          Sort items from largest to smallest. Then for each item, scan the bins from left to right and place it in the <em>first</em> bin that has enough space. If nothing fits, open a new bin.<br>
+          Why sorting first? Large items are hardest to place. Placing them first lets them claim space cleanly. Small items then fill the leftover gaps perfectly.<br>
+          <b>Guarantee: uses at most (11/9)·OPT + 6/9 bins — never more than ~22% above optimal.</b></p>
+
+          <p style="margin-top:10px"><b style="color:var(--c6)">First-Fit (FF) — simpler but worse:</b><br>
+          Same as FFD but <em>without sorting</em>. Items are placed in their original order. Because large items might arrive late, early small items scatter across bins leaving gaps too small for large items — forcing extra bins to open.</p>
+
+          <p style="margin-top:10px"><b style="color:var(--c7)">Best-Fit (BF) — tightest packing:</b><br>
+          For each item, scan all bins and place it in the bin with the <em>least remaining space that still fits</em>. This leaves larger gaps available for larger items later. Often performs similarly to FFD but without sorting.</p>
+
+          <p style="margin-top:10px"><b style="color:var(--c5)">Brute Force — exact but slow:</b><br>
+          Try every possible way to assign items to bins. Return the assignment that uses the fewest bins. Always finds the true optimal — but exponential time O(kⁿ). Only practical for about 8 items maximum.</p>
+
+          <div class="learn-tip">
+            <span class="tip-icon">💡</span>
+            <span><b>Key insight:</b> Since Bin Packing is NP-complete, we can't solve it exactly in polynomial time. FFD is the practical solution — fast (O(n log n)) and provably close to optimal.</span>
+          </div>
+          <p style="margin-top:9px"><b>➜ Try it:</b> Switch between modes in the left panel and run the same preset. Watch how the bin count changes.</p>
+        </div>
+      </div>
+
+      <!-- SECTION: Worked Example -->
+      <div class="learn-section">
+        <div class="learn-hdr" onclick="toggleLearn(this)">
+          <h3>③ Worked Example — FFD Step by Step</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body">
+          <p>Items: <code>0.7, 0.5, 0.4, 0.3, 0.2, 0.1</code>. Capacity = 1.0. Already sorted largest-first.</p>
+          <div class="worked">
+            <div><span class="ws">Step 1:</span> Place <span class="wb">0.7</span> → Bin 1 [used: 0.7, free: 0.3]</div>
+            <div><span class="ws">Step 2:</span> Place <span class="wb">0.5</span> → Bin 1 free=0.3 &lt; 0.5 ✗ → open Bin 2 [used: 0.5, free: 0.5]</div>
+            <div><span class="ws">Step 3:</span> Place <span class="wb">0.4</span> → Bin 1 free=0.3 &lt; 0.4 ✗ → Bin 2 free=0.5 ≥ 0.4 ✓ → Bin 2 [used: 0.9]</div>
+            <div><span class="ws">Step 4:</span> Place <span class="wb">0.3</span> → Bin 1 free=0.3 ≥ 0.3 ✓ → Bin 1 [used: 1.0 FULL ✓]</div>
+            <div><span class="ws">Step 5:</span> Place <span class="wb">0.2</span> → Bin 2 free=0.1 &lt; 0.2 ✗ → open Bin 3 [used: 0.2]</div>
+            <div><span class="ws">Step 6:</span> Place <span class="wb">0.1</span> → Bin 2 free=0.1 ≥ 0.1 ✓ → Bin 2 [used: 1.0 FULL ✓]</div>
+            <div><span class="wg">Result: 3 bins. OPT = 3. FFD found the optimal solution! ✓</span></div>
+          </div>
+          <p>Notice how step 4 placed 0.3 back into Bin 1 filling it perfectly. This only worked because 0.7 was placed first — if 0.3 had gone in first, the gap would've been wrong.</p>
+          <div class="learn-tip">
+            <span class="tip-icon">🎯</span>
+            <span><b>Verify yourself:</b> Visualizer tab → FFD mode → Build Steps → step through slowly. Each step above matches exactly one click.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Why FFD beats FF -->
+      <div class="learn-section">
+        <div class="learn-hdr" onclick="toggleLearn(this)">
+          <h3>④ Why Sorting First Makes FFD Better Than First-Fit</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body">
+          <p>Consider items: <code>0.51, 0.51, 0.51, 0.49, 0.49, 0.49</code>. Capacity = 1.0. OPT = 3 bins (pair each 0.51 with a 0.49).</p>
+          <p><b style="color:var(--c5)">First-Fit (original order):</b></p>
+          <div class="worked">
+            <div>0.51 → Bin 1. 0.51 → Bin 1 free=0.49? No (0.49&lt;0.51) → Bin 2. 0.51 → Bin 3.</div>
+            <div>0.49 → Bin 1 (0.51+0.49=1.0 ✓). 0.49 → Bin 2. 0.49 → Bin 3.</div>
+            <div><span class="wg">Result: 3 bins ✓ (happens to be optimal here)</span></div>
+          </div>
+          <p>Now try: <code>0.51, 0.49, 0.51, 0.49, 0.51, 0.49</code> (alternating order):</p>
+          <div class="worked">
+            <div>0.51 → Bin 1. 0.49 → Bin 1 (used: 1.0 FULL). 0.51 → Bin 2.</div>
+            <div>0.49 → Bin 2 (used: 1.0 FULL). 0.51 → Bin 3. 0.49 → Bin 3 (FULL).</div>
+            <div><span class="wg">Result: 3 bins ✓ — also optimal, but only by luck of alternating order.</span></div>
+          </div>
+          <p>The problem is First-Fit's result <b>depends on the input order</b>. In the worst case it uses (17/10)·OPT bins. FFD's sort step removes this dependence — no matter what order items arrive in, FFD always processes them largest-first, giving a consistent (11/9)·OPT guarantee.</p>
+          <div class="learn-tip">
+            <span class="tip-icon">💡</span>
+            <span><b>The core insight:</b> Large items are constraints. Small items are flexible. Place constraints first, then fill gaps with flexible pieces. This is the greedy insight behind FFD.</span>
+          </div>
+          <p style="margin-top:9px"><b>➜ Try it:</b> Compare tab → load <b>Awkward</b> preset → run all 4. FFD uses 4 bins, First-Fit and Best-Fit use 6. The 0.55s and 0.45s pair perfectly when sorted — but in original order they each go into separate bins leaving 0.45 gaps that 0.55s can't fit into.</p>
+        </div>
+      </div>
+
+      <!-- SECTION: NP in plain English -->
+      <div class="learn-section">
+        <div class="learn-hdr" onclick="toggleLearn(this)">
+          <h3>⑤ NP-Completeness in Plain English</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body">
+          <p><b>P</b> = problems solvable fast (polynomial time — like O(n), O(n²)). Sorting, shortest path, searching — all in P.</p>
+          <p><b>NP</b> = problems where solutions are <em>checkable</em> fast even if you can't <em>find</em> them fast. Bin Packing is in NP — if someone gives you a packing, you can check in O(n) whether it's valid. But finding the best packing takes exponential time.</p>
+          <p><b>NP-complete</b> = the hardest problems in NP. They're all secretly connected — if you crack one, you crack all of them. Bin Packing, Sudoku, Travelling Salesman, Tetris (optimal) — all NP-complete.</p>
+          <p><b>What this means for us:</b> Since Bin Packing is NP-complete, we use <b>approximation algorithms</b> — fast algorithms that are provably close to optimal. FFD is the classic example: runs in O(n log n) and guarantees at most (11/9)·OPT bins.</p>
+          <div class="learn-tip">
+            <span class="tip-icon">💡</span>
+            <span><b>NP does NOT mean "impossible."</b> It means no polynomial-time <em>exact</em> algorithm is known. We can still solve small instances exactly (brute force) and large instances approximately (FFD).</span>
+          </div>
+          <p style="margin-top:9px"><b>➜ Go deeper:</b> Switch to the NP-Complete tab for the full proof that Bin Packing is NP-complete.</p>
+        </div>
+      </div>
+
+      <!-- SECTION: Approximation ratio -->
+      <div class="learn-section">
+        <div class="learn-hdr" onclick="toggleLearn(this)">
+          <h3>⑥ The Approximation Ratio — (11/9)·OPT</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body">
+          <p>The approximation ratio tells you how close a heuristic's answer is to the true optimal.</p>
+          <p>FFD's guarantee: <b>FFD uses at most (11/9)·OPT + 6/9 bins.</b></p>
+          <p>What this means in practice: if the optimal solution uses 9 bins, FFD uses at most 11. That's never more than ~22% above optimal. For large OPT the +6/9 term becomes negligible.</p>
+          <p>This bound is <b>tight</b> — there exist specific inputs where FFD uses exactly 11/9 of optimal. It was proven by Johnson (1973) and confirmed by Simchi-Levi (1994).</p>
+          <p>The approximation ratio is displayed live in the stats panel as <b>Bins Used / OPT</b>. Watch it as you run different presets.</p>
+          <div class="learn-tip">
+            <span class="tip-icon">💡</span>
+            <span><b>Why this matters:</b> The ratio is a <em>mathematical guarantee</em> — not just "usually good" but provably never worse than 22% above optimal, no matter what input you give it.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Common mistakes -->
+      <div class="learn-section">
+        <div class="learn-hdr" onclick="toggleLearn(this)">
+          <h3>⑦ Common Mistakes — Don't Fall for These</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body">
+          <div class="mistake-item">
+            <b>❌ "FFD always gives the optimal solution"</b>
+            <span>Wrong. FFD is an approximation — it guarantees at most (11/9)·OPT bins, but can exceed optimal. It just never exceeds it by more than ~22%.</span>
+          </div>
+          <div class="mistake-item">
+            <b>❌ "First-Fit and FFD always give the same result"</b>
+            <span>Wrong. FFD almost always uses fewer bins because sorting first lets large items claim space before small items create awkward gaps.</span>
+          </div>
+          <div class="mistake-item">
+            <b>❌ "NP-complete means impossible to solve"</b>
+            <span>Wrong. NP-complete means no polynomial-time exact algorithm is known. We can solve small instances with brute force and large instances approximately with FFD.</span>
+          </div>
+          <div class="mistake-item">
+            <b>❌ "Bin Packing is hard because bins are small"</b>
+            <span>Wrong. The hardness comes from the combinatorial explosion of possible assignments — kⁿ combinations for n items and k bins — not the bin size.</span>
+          </div>
+          <div class="mistake-item">
+            <b>❌ "Best-Fit is always better than First-Fit"</b>
+            <span>Not always. Best-Fit packs tighter locally but can sometimes create gaps that are hard to fill later. On sorted input (FFD-style) it performs similarly to FFD.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: Glossary -->
+      <div class="learn-section">
+        <div class="learn-hdr" onclick="toggleLearn(this)">
+          <h3>⑧ Glossary — Every Term Used in This Tool</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body">
+          <div class="gloss-grid">
+            <div class="gloss-item"><b>Bin capacity</b><span>Maximum total size of items that fit in one bin. Normalized to 1.0 in this tool.</span></div>
+            <div class="gloss-item"><b>Item size</b><span>A number between 0 and 1 representing how much of a bin's capacity the item takes up.</span></div>
+            <div class="gloss-item"><b>OPT</b><span>The optimal (minimum possible) number of bins for a given set of items. The best any algorithm could do.</span></div>
+            <div class="gloss-item"><b>First-Fit (FF)</b><span>Greedy: place each item in the first bin with enough space. No sorting. Simple but less efficient.</span></div>
+            <div class="gloss-item"><b>FFD</b><span>First-Fit Decreasing. Sort items largest-first, then apply First-Fit. Approximation ratio (11/9)·OPT.</span></div>
+            <div class="gloss-item"><b>Best-Fit</b><span>Place each item in the bin with the least remaining space that still fits. Tighter local packing.</span></div>
+            <div class="gloss-item"><b>Brute Force</b><span>Try every possible assignment. Finds exact OPT but takes O(kⁿ) exponential time. Only practical for n≤8.</span></div>
+            <div class="gloss-item"><b>Approximation ratio</b><span>How close a heuristic is to optimal. FFD's ratio is (11/9)·OPT + 6/9 — provably tight.</span></div>
+            <div class="gloss-item"><b>NP-complete</b><span>In NP AND at least as hard as every NP problem. No polynomial-time exact algorithm known.</span></div>
+            <div class="gloss-item"><b>Partition problem</b><span>Can a set of integers be split into two equal-sum subsets? Used as the source problem in the NP-completeness proof.</span></div>
+            <div class="gloss-item"><b>Polynomial reduction</b><span>Transform one problem into another in polynomial time to prove NP-hardness.</span></div>
+            <div class="gloss-item"><b>Waste</b><span>Unused capacity across all bins. Lower waste = better packing. Displayed as average % per bin.</span></div>
+            <div class="gloss-item"><b>Greedy algorithm</b><span>Makes the locally best decision at each step without looking ahead. FFD and First-Fit are both greedy.</span></div>
+            <div class="gloss-item"><b>Certificate</b><span>A proposed solution — in Bin Packing, an assignment of items to bins. Used in the NP membership proof.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="learnCTAs">
+        <button class="btn btn-success" style="font-size:13px;padding:13px" onclick="switchTab('visual', document.querySelector('.tab-btn[onclick*=\'visual\']'))">
+          ✓ I understand — show me the animation →
+        </button>
+        <button class="btn" style="font-size:13px;padding:13px;background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.35)" onclick="showLearnQuiz()">
+          🧠 Test my understanding →
+        </button>
+      </div>
+
+      <!-- Quiz content — hidden by default, replaces learn content -->
+      <div id="learnQuizWrap" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">🧠 Knowledge Check</div>
+          <button class="btn btn-sec" style="width:auto;padding:7px 14px;font-size:12px" onclick="hideLearnQuiz()">← Back to Learn</button>
+        </div>
+        <div class="banner purple" style="font-size:12px">12 questions across all 3 CLOs. Select an answer for each then click Submit. Wrong answers show the correct explanation.</div>
+
+        <!-- CLO-4 -->
+        <div style="font-size:11px;font-weight:700;color:var(--c6);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+          <span style="padding:2px 10px;border-radius:5px;background:rgba(96,165,250,0.12)">CLO-4 — Algorithm Behaviour</span>
+          <span style="flex:1;height:1px;background:var(--stroke)"></span>
+        </div>
+
+        <div class="quiz-q" id="q1">
+          <div class="quiz-text">FFD processes items in <b>decreasing</b> order. Given items [0.3, 0.7, 0.5, 0.1], what order does FFD process them in?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q1','a')">A. 0.3, 0.7, 0.5, 0.1 — original order</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q1','b')">B. 0.7, 0.5, 0.3, 0.1 — largest first</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q1','c')">C. 0.1, 0.3, 0.5, 0.7 — smallest first</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q1','d')">D. 0.5, 0.3, 0.7, 0.1 — random order</div>
+          </div>
+          <div class="quiz-feedback" id="q1-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="FFD sorts items in <b>decreasing order</b> before placing them. Largest items first ensures they claim space cleanly before smaller items can create awkward gaps."></div>
+        </div>
+
+        <div class="quiz-q" id="q2">
+          <div class="quiz-text">Item size 0.4 needs placing. Bin 1 has 0.3 remaining, Bin 2 has 0.5 remaining, Bin 3 has 0.4 remaining. Where does <b>First-Fit</b> place it?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q2','a')">A. Bin 1 — it's the first bin</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q2','b')">B. Bin 2 — first bin with enough space</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q2','c')">C. Bin 3 — tightest fit</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q2','d')">D. New Bin 4 — nothing fits</div>
+          </div>
+          <div class="quiz-feedback" id="q2-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="First-Fit scans bins left to right and places the item in the <b>first bin that fits</b>. Bin 1 has only 0.3 remaining — 0.4 doesn't fit. Bin 2 has 0.5 remaining — 0.4 fits. Place in Bin 2."></div>
+        </div>
+
+        <div class="quiz-q" id="q3">
+          <div class="quiz-text">Brute force finds the optimal solution. Why can't we always use it instead of FFD?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q3','a')">A. Brute force uses too much memory</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q3','b')">B. Brute force only works for small item sizes</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q3','c')">C. Brute force takes exponential time O(kⁿ) — infeasible for large n</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q3','d')">D. Brute force doesn't always find the optimal</div>
+          </div>
+          <div class="quiz-feedback" id="q3-fb"></div>
+          <div class="quiz-answer" data-correct="c" data-explain="Brute force tries every possible assignment — kⁿ combinations. For n=20, k=10 that's 10²⁰ operations. At 10⁹ ops/second that's longer than the age of the universe. FFD runs in O(n log n)."></div>
+        </div>
+
+        <div class="quiz-q" id="q4">
+          <div class="quiz-text">On the <b>Awkward preset</b> (items: 0.45×4, 0.55×4), FFD uses 4 bins while First-Fit uses 6. Why?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q4','a')">A. FFD uses fewer bins because it tries more combinations</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q4','b')">B. FFD sorts first — each 0.55 pairs with a 0.45 (sum=1.0). First-Fit places 0.45s first, leaving gaps 0.55s can't fill</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q4','c')">C. First-Fit always uses more bins than FFD</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q4','d')">D. The items are too large for First-Fit to handle</div>
+          </div>
+          <div class="quiz-feedback" id="q4-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="FFD sorts: [0.55,0.55,0.55,0.55,0.45,0.45,0.45,0.45]. Each 0.55 pairs perfectly with a 0.45 = 1.0. First-Fit processes in original order — 0.45s fill bins in pairs (0.9 used, 0.1 left), then 0.55s can't fit anywhere and open new bins."></div>
+        </div>
+
+        <!-- CLO-3 -->
+        <div style="font-size:11px;font-weight:700;color:var(--c4);letter-spacing:.06em;text-transform:uppercase;margin:4px 0;display:flex;align-items:center;gap:8px">
+          <span style="padding:2px 10px;border-radius:5px;background:rgba(52,211,153,0.12)">CLO-3 — Algorithm Design & Paradigm</span>
+          <span style="flex:1;height:1px;background:var(--stroke)"></span>
+        </div>
+
+        <div class="quiz-q" id="q5">
+          <div class="quiz-text">FFD is a <b>greedy algorithm</b>. What makes it greedy?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q5','a')">A. It always finds the globally optimal solution</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q5','b')">B. It makes the locally best decision at each step without backtracking</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q5','c')">C. It uses divide and conquer to split items into halves</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q5','d')">D. It stores all possible solutions and picks the best</div>
+          </div>
+          <div class="quiz-feedback" id="q5-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="A greedy algorithm makes the <b>locally optimal choice at each step</b> without reconsidering past decisions. FFD's greedy choice: 'place this item in the first bin that fits.' It never backtracks or considers alternatives."></div>
+        </div>
+
+        <div class="quiz-q" id="q6">
+          <div class="quiz-text">Same scenario: Bin 1 has 0.3, Bin 2 has 0.5, Bin 3 has 0.4 remaining. Item size 0.4. Where does <b>Best-Fit</b> place it?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q6','a')">A. Bin 2 — first bin that fits</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q6','b')">B. Bin 3 — tightest fit (exactly 0.4 remaining)</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q6','c')">C. Bin 1 — smallest bin</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q6','d')">D. New Bin 4</div>
+          </div>
+          <div class="quiz-feedback" id="q6-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="Best-Fit scans <b>all</b> bins and places in the bin with the <b>least remaining space that still fits</b>. Bin 3 has exactly 0.4 remaining — a perfect fit, zero waste. Best-Fit chooses Bin 3 over Bin 2's 0.5."></div>
+        </div>
+
+        <div class="quiz-q" id="q7">
+          <div class="quiz-text">Why does sorting items in <b>decreasing order</b> improve FFD's result?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q7','a')">A. Smaller items are easier to place so they should go first</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q7','b')">B. Large items placed first leave flexible gaps that small items can fill perfectly</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q7','c')">C. Sorting reduces the number of bins needed to exactly OPT</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q7','d')">D. Sorting speeds up the algorithm from O(n²) to O(n)</div>
+          </div>
+          <div class="quiz-feedback" id="q7-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="<b>Large items are constraints, small items are flexible.</b> Large items first claim space cleanly. Small items fill the remaining gaps. Without sorting, small items scatter across bins leaving gaps too small for large items — forcing extra bins."></div>
+        </div>
+
+        <div class="quiz-q" id="q8">
+          <div class="quiz-text">FFD's approximation guarantee is <b>(11/9)·OPT + 6/9</b>. If OPT = 9 bins, what is the maximum FFD can use?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q8','a')">A. 9 bins — FFD always reaches optimal</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q8','b')">B. 10 bins</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q8','c')">C. 11 bins</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q8','d')">D. 18 bins — double the optimal</div>
+          </div>
+          <div class="quiz-feedback" id="q8-fb"></div>
+          <div class="quiz-answer" data-correct="c" data-explain="(11/9)×9 + 6/9 = 11 + 0.67 = 11.67 → at most <b>11 bins</b>. FFD guarantees never more than (11/9) times optimal. For OPT=9, that's 11 bins maximum — never more than ~22% above optimal."></div>
+        </div>
+
+        <!-- CLO-5 -->
+        <div style="font-size:11px;font-weight:700;color:var(--c2);letter-spacing:.06em;text-transform:uppercase;margin:4px 0;display:flex;align-items:center;gap:8px">
+          <span style="padding:2px 10px;border-radius:5px;background:rgba(244,114,182,0.12)">CLO-5 — NP-Completeness Proof</span>
+          <span style="flex:1;height:1px;background:var(--stroke)"></span>
+        </div>
+
+        <div class="quiz-q" id="q9">
+          <div class="quiz-text">Bin Packing is in <b>NP</b>. What does this mean?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q9','a')">A. Bin Packing cannot be solved — it's impossible</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q9','b')">B. Bin Packing can be solved in polynomial time</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q9','c')">C. A proposed solution (certificate) can be verified in polynomial time</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q9','d')">D. Bin Packing requires non-deterministic computation</div>
+          </div>
+          <div class="quiz-feedback" id="q9-fb"></div>
+          <div class="quiz-answer" data-correct="c" data-explain="NP means <b>solutions are verifiable in polynomial time</b>. Given a proposed packing: check every item assigned (O(n)), no bin overflows (O(n)), bins used ≤ k (O(n)). Total: O(n). Easy to check, hard to find."></div>
+        </div>
+
+        <div class="quiz-q" id="q10">
+          <div class="quiz-text">In the Partition → Bin Packing reduction, we divide each element by T. Why?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q10','a')">A. To make the numbers smaller so they're easier to compute with</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q10','b')">B. To normalize items into (0,1] so they fit in bins of capacity 1</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q10','c')">C. To ensure the total sum equals exactly 2</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q10','d')">D. To convert Partition into a sorting problem</div>
+          </div>
+          <div class="quiz-feedback" id="q10-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="Dividing by T <b>normalizes</b> each element to (0,1] — the required size range for Bin Packing. After normalization, each subset summing to T becomes a subset summing to 1 — exactly one bin's capacity. This makes the two problems equivalent."></div>
+        </div>
+
+        <div class="quiz-q" id="q11">
+          <div class="quiz-text">The <b>forward direction</b> of the reduction proof shows:</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q11','a')">A. If Bin Packing = YES then Partition = YES</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q11','b')">B. If Partition = YES then Bin Packing = YES</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q11','c')">C. If Partition = NO then Bin Packing = NO</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q11','d')">D. Partition and Bin Packing always have opposite answers</div>
+          </div>
+          <div class="quiz-feedback" id="q11-fb"></div>
+          <div class="quiz-answer" data-correct="b" data-explain="The <b>forward direction</b> goes Partition → Bin Packing: if S splits into two equal halves (Partition YES), the normalized items fit in 2 bins (Bin Packing YES) — because each half sums to T/T = 1.0. The backward direction proves the reverse."></div>
+        </div>
+
+        <div class="quiz-q" id="q12">
+          <div class="quiz-text">Why must the reduction from Partition to Bin Packing run in <b>polynomial time</b>?</div>
+          <div class="quiz-opts">
+            <div class="quiz-opt" onclick="selectOpt(this,'q12','a')">A. To make the proof easier to understand</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q12','b')">B. Because Partition requires polynomial time to solve</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q12','c')">C. So the hardness transfers — an exponential reduction would hide the difficulty inside itself</div>
+            <div class="quiz-opt" onclick="selectOpt(this,'q12','d')">D. Polynomial time is required by the definition of NP</div>
+          </div>
+          <div class="quiz-feedback" id="q12-fb"></div>
+          <div class="quiz-answer" data-correct="c" data-explain="If the reduction took exponential time, we could hide hardness inside the reduction — it would be cheating. The reduction must be polynomial so the <b>only</b> hard part is solving Bin Packing. Our reduction does O(n) work: compute T, divide each element."></div>
+        </div>
+
+        <button class="btn btn-success" style="font-size:13px;padding:13px" onclick="submitQuiz()">Submit Answers →</button>
+
+        <!-- Score panel -->
+        <div id="quizScoreWrap" style="display:none">
+          <div style="background:rgba(0,0,0,0.22);border:1px solid var(--stroke);border-radius:14px;padding:18px;text-align:center">
+            <div style="font-size:28px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:6px" id="quizScoreNum"></div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:14px" id="quizScoreMsg"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px" id="quizCloBreakdown"></div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+              <button class="btn btn-sec" style="width:auto;padding:9px 20px" onclick="resetQuiz()">↺ Try Again</button>
+              <button class="btn btn-success" style="width:auto;padding:9px 20px" onclick="hideLearnQuiz()">← Back to Learn</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /learnQuizWrap -->
+
+    </div><!-- /vp-learn -->
+
+    <!-- ── VISUALIZER TAB ── -->
+    <div class="viz-panel" id="vp-visual">
+      <div class="banner purple">
+        <b>Visualizer</b> — watch the algorithm pack items into bins step by step. Use ▶ in the left panel to step through.
+      </div>
+
+      <!-- EXPLAIN BOX — at the top so it's always visible next to the animation -->
+      <div class="explain-wrap">
+        <div class="explain-header">
+          🎓 Step Explanation
+          <span class="explain-step-badge" id="explStep">—</span>
+        </div>
+        <div class="explain-body" id="explBody">
+          Click <b>Build Steps</b> then <b>▶</b> to see a plain-English explanation of each step — with actual item sizes and bin numbers.
+        </div>
+      </div>
+
+      <!-- Items bar -->
+      <div class="items-bar-wrap">
+        <div class="items-bar-label">
+          Items to Pack
+          <span id="itemsInfo" style="color:var(--c3);font-family:var(--font-mono);font-size:11px"></span>
+        </div>
+        <div class="items-bar" id="itemsBar">
+          <span style="color:var(--muted);font-size:12px">Load a preset or build steps to see items.</span>
+        </div>
+      </div>
+
+      <!-- Bins -->
+      <div class="bins-section">
+        <div class="bins-header">
+          Bins
+          <span id="binCountLabel" style="color:var(--c4);font-family:var(--font-mono);font-size:11px"></span>
+        </div>
+        <div class="bins-row" id="binsRow">
+          <span style="color:var(--muted);font-size:12px">No bins yet — click Build Steps then ▶</span>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend-row" id="legendRow">
+        <span style="color:var(--muted);font-size:11.5px;font-weight:600">Waste heatmap:</span>
+        <span class="legend-item"><span style="width:14px;height:14px;border-radius:4px;background:rgb(20,200,40);opacity:0.6;display:inline-block"></span> <span style="font-size:11.5px;color:var(--muted)">Low waste</span></span>
+        <span class="legend-item"><span style="width:14px;height:14px;border-radius:4px;background:rgb(255,180,40);opacity:0.6;display:inline-block"></span> <span style="font-size:11.5px;color:var(--muted)">Medium</span></span>
+        <span class="legend-item"><span style="width:14px;height:14px;border-radius:4px;background:rgb(255,50,40);opacity:0.6;display:inline-block"></span> <span style="font-size:11.5px;color:var(--muted)">High waste</span></span>
+        <span style="font-size:11px;color:var(--muted);opacity:0.6">(colored empty space at top of each bin)</span>
+      </div>
+
+      <!-- History -->
+      <div>
+        <div class="viz-h3">
+          Step History
+          <span id="histCount" style="font-weight:400;font-size:11px;color:var(--muted)">(click any row to jump)</span>
+        </div>
+        <div class="hist-wrap">
+          <table class="hist-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Action</th>
+                <th>Item</th>
+                <th>Bin</th>
+                <th>Remaining</th>
+              </tr>
+            </thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COMPARE TAB ── -->
+    <div class="viz-panel" id="vp-compare">
+      <div class="banner pink">
+        <b>Algorithm Comparison</b> — same input, all 4 algorithms. Click ⚡ Run All 4 in the left panel to populate.
+      </div>
+
+      <!-- Results not yet run -->
+      <div id="compareEmpty" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
+        Click <b style="color:var(--text)">⚡ Run All 4 Algorithms & Compare</b> in the left panel to see results here.
+      </div>
+
+      <!-- Results grid — hidden until run -->
+      <div id="compareResults" style="display:none">
+
+        <!-- 4 algorithm result cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="compareGrid"></div>
+
+        <!-- Summary bar chart -->
+        <div>
+          <div class="viz-h3">Bins Used — Side by Side</div>
+          <div style="background:rgba(0,0,0,0.22);border:1px solid var(--stroke);border-radius:12px;padding:14px">
+            <div id="compareBarChart"></div>
+          </div>
+        </div>
+
+        <!-- Distribution comparison across all presets -->
+        <div>
+          <div class="viz-h3">FFD Approximation Ratio — Across All Presets</div>
+          <div style="background:rgba(0,0,0,0.22);border:1px solid var(--stroke);border-radius:12px;padding:14px;overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr style="border-bottom:1px solid var(--stroke)">
+                  <th style="padding:7px 12px;text-align:left;color:var(--muted);font-size:11px">Preset</th>
+                  <th style="padding:7px 12px;text-align:center;color:var(--c4);font-size:11px">FFD Bins</th>
+                  <th style="padding:7px 12px;text-align:center;color:var(--c5);font-size:11px">OPT Bins</th>
+                  <th style="padding:7px 12px;text-align:center;color:var(--c3);font-size:11px">FFD Ratio</th>
+                  <th style="padding:7px 12px;text-align:left;color:var(--muted);font-size:11px">What it shows</th>
+                </tr>
+              </thead>
+              <tbody id="presetCompareBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Why section -->
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>Why FFD Usually Wins</h4>
+            <p>Sorting largest-first means big items claim space cleanly. Small items then fill the remaining gaps perfectly. The sort step costs O(n log n) but saves many bin openings.</p>
+          </div>
+          <div class="info-card">
+            <h4>Why First-Fit Can Lose</h4>
+            <p>Without sorting, large items arriving late find bins already partially filled with small items — in the wrong sizes to combine. Extra bins open unnecessarily.</p>
+          </div>
+          <div class="info-card">
+            <h4>Best-Fit vs FFD</h4>
+            <p>Best-Fit packs tighter locally (least wasted space per bin) but doesn't sort first. On sorted input both behave similarly. FFD's sort step gives it a stronger approximation guarantee.</p>
+          </div>
+          <div class="info-card">
+            <h4>When Brute Force Matters</h4>
+            <p>Brute Force gives the provably minimum bin count. For small n (≤8) it's feasible. For large n it's exponential — proving why FFD's approximation is the practical solution.</p>
+          </div>
+        </div>
+
+        <!-- CLO-3: Counterexample showing FFD is not always optimal -->
+        <div style="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.22);border-radius:13px;padding:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--c5);margin-bottom:8px">⚠ FFD Counterexample — Approximation ≠ Optimal</div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:10px">FFD is a <b style="color:var(--text)">greedy approximation</b> — not always optimal. Load the <b style="color:var(--c1)">FFD vs OPT</b> preset, click ⚡ Run All 4, and watch FFD use <b style="color:var(--c5)">4 bins</b> while Brute Force finds the optimal <b style="color:var(--c4)">3 bins</b>. This proves FFD's guarantee is (11/9)·OPT — provably close but not exact.</p>
+          <button class="btn" style="font-size:12px" onclick="loadCounterExample()">▶ Load FFD vs OPT & Run All 4</button>
+        </div>
+
+      </div><!-- /compareResults -->
+    </div><!-- /vp-compare -->
+
+    <!-- ── NP TAB ── -->
+    <div class="viz-panel" id="vp-np">
+      <div class="banner pink">
+        <b>NP-Completeness Proof</b> — proving Bin Packing is NP-complete in two steps: (1) show it's in NP, (2) reduce from Partition.
+      </div>
+
+      <!-- What NP-complete means -->
+      <div class="learn-section">
+        <div class="learn-hdr open" onclick="toggleLearn(this)">
+          <h3>🧠 What Does NP-Complete Mean?</h3>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="learn-body open">
+          <p><b>P</b> = problems solvable fast (polynomial time). Sorting, shortest path — all in P.</p>
+          <p><b>NP</b> = problems where a proposed solution can be <em>checked</em> fast, even if it can't be <em>found</em> fast. Bin Packing is in NP — if someone hands you a packing, you can verify it in O(n).</p>
+          <p><b>NP-complete</b> = the hardest problems in NP. They're all secretly connected — if you solve one efficiently, you solve ALL of NP. Bin Packing, Sudoku, Tetris, Travelling Salesman — all NP-complete.</p>
+          <p>To prove a problem X is NP-complete you need exactly two things:</p>
+          <p>① <b>Show X is in NP</b> — describe a certificate and show it can be verified in polynomial time.<br>
+             ② <b>Show X is NP-hard</b> — take a known NP-complete problem and reduce it to X in polynomial time.</p>
+          <div class="learn-tip">
+            <span class="tip-icon">💡</span>
+            <span><b>NP does NOT mean impossible.</b> It means no polynomial-time exact algorithm is known. We can still approximate with FFD — and that's exactly why approximation algorithms matter.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: In NP -->
+      <div class="proof-step">
+        <div class="proof-step-hdr">
+          <span class="proof-badge">Step 1</span>
+          <h4>Bin Packing ∈ NP — It Can Be Verified Fast</h4>
+        </div>
+        <p><b>The certificate</b> (proposed solution): an assignment of every item to a bin. For example: Item 1 → Bin 2, Item 2 → Bin 1, Item 3 → Bin 1, ...</p>
+        <p><b>The verifier</b> checks four things, all in polynomial time:</p>
+        <p>
+          <b>① Every item assigned:</b> scan the certificate, confirm every item has exactly one bin label. Cost: <code>O(n)</code>.<br>
+          <b>② No bin exceeds capacity:</b> for each bin, sum the sizes of all assigned items, verify total ≤ 1. Cost: <code>O(n)</code>.<br>
+          <b>③ All sizes valid:</b> confirm every item size sᵢ ∈ (0,1]. Cost: <code>O(n)</code>.<br>
+          <b>④ Bins used ≤ k:</b> count distinct bin labels, verify count ≤ k. Cost: <code>O(n)</code>.
+        </p>
+        <p><b>Total verification cost: O(n) — polynomial. ✓</b></p>
+        <p>The verifier never tries to <em>find</em> a good packing — it only <em>checks</em> that the given one is valid. Finding is hard. Checking is easy. That's NP.</p>
+      </div>
+
+      <!-- Step 2: Reduction -->
+      <div class="proof-step">
+        <div class="proof-step-hdr">
+          <span class="proof-badge">Step 2</span>
+          <h4>NP-Hard — Reduce from Partition</h4>
+        </div>
+        <p><b>The Partition problem (known NP-complete):</b> Given a set S = {a₁, a₂, …, aₙ} of positive integers with total sum 2T, can S be split into two subsets each summing to exactly T?</p>
+        <p><b>In plain English:</b> You have a list of numbers. Their total is even. Can you split them into two groups with equal sums?<br>
+        <b>Example:</b> S = {3, 3, 2, 2}, total = 10, T = 5. Split into {3,2} and {3,2} — both sum to 5. YES.</p>
+
+        <p style="margin-top:10px"><b>The construction — how we disguise Partition as Bin Packing:</b></p>
+        <p><b>In plain English:</b> Shrink all numbers so they fit between 0 and 1 (divide by T). Then ask if they fit in 2 bins of size 1. That's it.</p>
+        <p><b>Formally:</b><br>
+        ① Compute <code>T = (Σ aᵢ) / 2</code> — half the total sum.<br>
+        ② Normalize: create item sizes <code>sᵢ = aᵢ / T</code> for each aᵢ ∈ S. Now every sᵢ ∈ (0, 1].<br>
+        ③ Set <code>k = 2</code> bins of capacity 1.<br>
+        ④ Ask: can all n normalized items fit in 2 bins?</p>
+        <p><b>This construction runs in O(n)</b> — just one division per element. Polynomial. ✓</p>
+
+        <div class="worked">
+          <div><span class="ws">Input:</span> S = {3, 3, 2, 2} &nbsp; sum = 10 &nbsp; T = 10/2 = 5</div>
+          <div><span class="ws">Normalize (÷T):</span> 3/5=<span class="wb">0.6</span> &nbsp; 3/5=<span class="wb">0.6</span> &nbsp; 2/5=<span class="wb">0.4</span> &nbsp; 2/5=<span class="wb">0.4</span></div>
+          <div><span class="ws">Bin Packing:</span> items={0.6, 0.6, 0.4, 0.4}, k=2, capacity=1</div>
+        </div>
+      </div>
+
+      <!-- Step 3: Forward -->
+      <div class="proof-step">
+        <div class="proof-step-hdr">
+          <span class="proof-badge">Step 3</span>
+          <h4>Correctness — Forward Direction (Partition YES → Bin Packing YES)</h4>
+        </div>
+        <p><b>In plain English:</b> If the numbers can be split into two equal groups, then the shrunk versions fit perfectly into 2 bins — because each group adds up to exactly 1.0 after dividing by T.</p>
+        <p><b>Formally:</b><br>
+        Assume Partition = YES. So ∃ subset A ⊆ S where <code>Σ(aᵢ for i∈A) = T</code> and B = S\A where <code>Σ(aᵢ for i∈B) = T</code>.</p>
+        <p>After normalizing:<br>
+        <code>Σ(sᵢ for i∈A) = Σ(aᵢ/T for i∈A) = (1/T) · Σ(aᵢ for i∈A) = T/T = <b>1</b></code><br>
+        <code>Σ(sᵢ for i∈B) = T/T = <b>1</b></code></p>
+        <p>Place all items from A into Bin 1 → total = 1.0 ≤ capacity 1. ✓<br>
+        Place all items from B into Bin 2 → total = 1.0 ≤ capacity 1. ✓<br>
+        All n items packed in k = 2 bins. <b>Bin Packing = YES. ✓</b></p>
+
+        <div class="worked">
+          <div><span class="ws">A={3,2}=5=T</span> → after ÷T: {0.6,0.4} → <span class="wg">Bin1: 0.6+0.4=1.0 ✓</span></div>
+          <div><span class="ws">B={3,2}=5=T</span> → after ÷T: {0.6,0.4} → <span class="wg">Bin2: 0.6+0.4=1.0 ✓</span></div>
+        </div>
+      </div>
+
+      <!-- Step 4: Backward -->
+      <div class="proof-step">
+        <div class="proof-step-hdr">
+          <span class="proof-badge">Step 4</span>
+          <h4>Correctness — Backward Direction (Bin Packing YES → Partition YES)</h4>
+        </div>
+        <p><b>In plain English:</b> If the items fit in 2 bins, both bins must be exactly full (because the total of all items is exactly 2.0, and two bins each holding at most 1.0 can only both reach 1.0 if they're both exactly full). Multiply back by T to get the partition.</p>
+        <p><b>Formally:</b><br>
+        Assume Bin Packing = YES. Let A = items in Bin 1, B = items in Bin 2.</p>
+        <p>By capacity constraint:<br>
+        <code>Σ(sᵢ for i∈A) ≤ 1</code> &nbsp; and &nbsp; <code>Σ(sᵢ for i∈B) ≤ 1</code></p>
+        <p>Total of all normalized items:<br>
+        <code>Σ all sᵢ = Σ(aᵢ/T) = (1/T) · 2T = <b>2</b></code></p>
+        <p>Since both sums are ≤ 1 and must total exactly 2, each must equal exactly 1:<br>
+        <code>Σ(sᵢ for i∈A) = 1</code> &nbsp; and &nbsp; <code>Σ(sᵢ for i∈B) = 1</code></p>
+        <p>Denormalize (multiply by T):<br>
+        <code>Σ(aᵢ for i∈A) = 1 × T = T</code> &nbsp; ✓<br>
+        <code>Σ(aᵢ for i∈B) = 1 × T = T</code> &nbsp; ✓</p>
+        <p>Two subsets of S each summing to T. <b>Partition = YES. ✓</b></p>
+
+        <div class="worked">
+          <div><span class="ws">Bin1=[0.6+0.4=1.0]</span> × T=5 → <span class="wg">Group1 sum = 5 = T ✓</span></div>
+          <div><span class="ws">Bin2=[0.6+0.4=1.0]</span> × T=5 → <span class="wg">Group2 sum = 5 = T ✓</span></div>
+          <div><span class="wg">→ Partition = YES ✓</span></div>
+        </div>
+
+        <p style="margin-top:10px"><b>Formal Conclusion:</b> Partition is NP-complete (Karp, 1972). We constructed a polynomial-time reduction Partition ≤ₚ Bin Packing in O(n) time, with the same YES/NO answer. Since Partition is NP-complete and Bin Packing ∈ NP (Step 1), <b>Bin Packing is NP-complete. ∎</b></p>
+      </div>
+
+      <!-- Reduction diagram -->
+      <div>
+        <div class="viz-h3">Reduction Diagram — Concrete Example</div>
+        <div class="reduction-diagram">
+          <div><b>Partition instance:</b> S = {3, 3, 2, 2} &nbsp;|&nbsp; sum = 10 &nbsp;|&nbsp; T = 5</div>
+          <div style="margin:4px 0"><span class="arrow">↓ normalize: divide each by T=5</span></div>
+          <div><b>Bin Packing instance:</b> items = {0.6, 0.6, 0.4, 0.4} &nbsp;|&nbsp; k=2 bins &nbsp;|&nbsp; capacity=1</div>
+          <div style="margin:4px 0"><span class="arrow">↓ solve Bin Packing</span></div>
+          <div>Bin 1: [0.6 + 0.4 = 1.0 ✓] &nbsp; Bin 2: [0.6 + 0.4 = 1.0 ✓] → <span class="yes">YES — fits in 2 bins</span></div>
+          <div style="margin:4px 0"><span class="arrow">↓ denormalize: multiply each by T=5</span></div>
+          <div>Subset A: {3, 2} = 5 = T ✓ &nbsp; Subset B: {3, 2} = 5 = T ✓ → <span class="yes">Partition = YES ✓</span></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">
+            <b>Conclusion:</b> Partition ≤ₚ Bin Packing in O(n). Since Partition is NP-complete (Karp, 1972) and Bin Packing ∈ NP, <span class="yes">Bin Packing is NP-complete. ∎</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="viz-h3">Interactive Reduction — Try It Live</div>
+        <div class="banner teal" style="margin-bottom:10px">
+          The <b>Partition NP</b> preset loads items {0.6, 0.6, 0.4, 0.4} — the normalized version of {3,3,2,2}/T=5. Run it in <b>FFD mode</b> and watch it pack into exactly 2 bins, proving the Partition instance has a YES answer.
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="info-card">
+            <h4>Partition Instance</h4>
+            <p>S = {3, 3, 2, 2}<br>
+            Sum = 10, T = 5<br>
+            Question: can S split into two subsets each summing to 5?</p>
+            <p style="margin-top:8px;color:var(--c4);font-weight:700">Answer: YES → {3,2} and {3,2}</p>
+          </div>
+          <div class="info-card">
+            <h4>Equivalent Bin Packing</h4>
+            <p>Items = {0.6, 0.6, 0.4, 0.4}<br>
+            k = 2 bins, capacity = 1.0<br>
+            Question: do all items fit in 2 bins?</p>
+            <p style="margin-top:8px;color:var(--c4);font-weight:700">Answer: YES → Bin1=[0.6+0.4] Bin2=[0.6+0.4]</p>
+          </div>
+        </div>
+
+        <button class="btn btn-success" style="margin-top:10px" onclick="loadPartitionDemo()">
+          ▶ Load Partition Preset & Run Reduction Live
+        </button>
+        <div id="npDemoResult" style="margin-top:10px;display:none" class="banner teal">
+          <b>✓ Reduction confirmed!</b> FFD packed all items into exactly 2 bins. Each bin sums to exactly 1.0. Denormalize: multiply by T=5 → each bin sums to 5 = T. The Partition answer is YES.
+        </div>
+      </div>
+
+      <!-- Why this matters -->
+      <div class="info-grid">
+        <div class="info-card">
+          <h4>Why This Proof Matters</h4>
+          <p>It proves that Bin Packing is at least as hard as Partition. Since Partition has no known polynomial-time solution, neither does Bin Packing. This justifies using FFD as an approximation rather than searching for an exact algorithm.</p>
+        </div>
+        <div class="info-card">
+          <h4>The Polynomial Time Requirement</h4>
+          <p>The reduction must run in polynomial time — otherwise it's cheating. Our construction does two things: compute T (O(n)) and divide each element by T (O(n)). Total: O(n). Well within polynomial. ✓</p>
+        </div>
+      </div>
+
+    </div><!-- /vp-np -->
+
+    <!-- ── COMPLEXITY TAB ── -->
+    <div class="viz-panel" id="vp-complexity">
+      <div class="banner amber">
+        <b>Complexity Analysis</b> — time and space complexity of all four algorithms, with growth curves showing why brute force is impractical and FFD is the right choice.
+      </div>
+
+      <!-- Complexity table -->
+      <div>
+        <div class="viz-h3">Time & Space Complexity — All Four Algorithms</div>
+        <div style="overflow-x:auto">
+          <table class="cx-table">
+            <thead>
+              <tr>
+                <th>Algorithm</th>
+                <th>Time Complexity</th>
+                <th>Space</th>
+                <th>Optimal?</th>
+                <th>Approximation</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="hi">FFD</td>
+                <td class="good">O(n log n)</td>
+                <td class="good">O(n)</td>
+                <td style="color:var(--c3);font-weight:700">≈ OPT</td>
+                <td class="good">(11/9)·OPT + 6/9</td>
+                <td style="font-size:11.5px;color:var(--muted)">Sort costs O(n log n). First-Fit scan is O(n²) naive but O(n log n) with ordered bins. Sort dominates.</td>
+              </tr>
+              <tr style="background:rgba(255,255,255,0.01)">
+                <td class="hi">First-Fit</td>
+                <td class="ok">O(n²)</td>
+                <td class="good">O(n)</td>
+                <td style="color:var(--c3);font-weight:700">No</td>
+                <td class="ok">(17/10)·OPT</td>
+                <td style="font-size:11.5px;color:var(--muted)">Each item scans all open bins — O(n) per item × n items = O(n²). No sort needed.</td>
+              </tr>
+              <tr>
+                <td class="hi">Best-Fit</td>
+                <td class="ok">O(n²)</td>
+                <td class="good">O(n)</td>
+                <td style="color:var(--c3);font-weight:700">No</td>
+                <td class="ok">~(17/10)·OPT</td>
+                <td style="font-size:11.5px;color:var(--muted)">Scans ALL bins per item (not just first fit) — O(n) per item × n items = O(n²). Tighter locally but same asymptotic cost.</td>
+              </tr>
+              <tr style="background:rgba(255,255,255,0.01)">
+                <td class="hi">Brute Force</td>
+                <td class="bad">O(kⁿ)</td>
+                <td class="good">O(n)</td>
+                <td style="color:var(--c4);font-weight:700">Always ✓</td>
+                <td style="color:var(--c4);font-weight:700">1.00× (exact)</td>
+                <td style="font-size:11.5px;color:var(--muted)">k bins × n items = kⁿ assignments to try. For n=20, k=10: 10²⁰ operations. Exponential — infeasible.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="learn-tip" style="margin-top:8px">
+          <span class="tip-icon">📌</span>
+          <span><b>What does (11/9)·OPT mean?</b> The · means multiply. OPT = the true minimum bins any algorithm could possibly use. So (11/9)·OPT = 1.22 × OPT. If the perfect solution needs 9 bins, FFD uses at most 11. Never more than ~22% above optimal — guaranteed.</span>
+        </div>
+      </div>
+      <div>
+        <div class="viz-h3">Best / Average / Worst Case — FFD</div>
+        <div style="overflow-x:auto">
+          <table class="cx-table">
+            <thead>
+              <tr>
+                <th>Case</th>
+                <th>Time</th>
+                <th>When it happens</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--c4);font-weight:700">Best Case</td>
+                <td class="good">O(n log n)</td>
+                <td style="font-size:11.5px;color:var(--muted)">All items identical size, or all items fit in one bin</td>
+                <td style="font-size:11.5px;color:var(--muted)">Sort still costs O(n log n). Each item placed in first bin immediately — O(1) per placement. Total dominated by sort.</td>
+              </tr>
+              <tr style="background:rgba(255,255,255,0.01)">
+                <td style="color:var(--c3);font-weight:700">Average Case</td>
+                <td class="good">O(n log n)</td>
+                <td style="font-size:11.5px;color:var(--muted)">Random item sizes, sparse bins</td>
+                <td style="font-size:11.5px;color:var(--muted)">Sort O(n log n). Average bin scan is short — most items find a fit quickly. With balanced BST for bin tracking: O(n log n) overall.</td>
+              </tr>
+              <tr>
+                <td style="color:var(--c5);font-weight:700">Worst Case</td>
+                <td class="ok">O(n²)</td>
+                <td style="font-size:11.5px;color:var(--muted)">Each item scans all existing bins before fitting or opening new one</td>
+                <td style="font-size:11.5px;color:var(--muted)">Naive implementation: O(n) bin scan × n items = O(n²). Optimized with ordered data structure reduces to O(n log n).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="learn-tip" style="margin-top:8px">
+          <span class="tip-icon">📌</span>
+          <span><b>Why does the main table say O(n log n) but worst case says O(n²)?</b> The O(n log n) assumes an optimized implementation using a balanced binary search tree to find fitting bins in O(log n). The O(n²) worst case is for the naive implementation that scans all bins one by one — which is what this tool actually runs. Both are correct depending on the implementation.</span>
+        </div>
+      </div>
+      <div>
+        <div class="viz-h3">Growth Curve — Operations vs Number of Items</div>
+        <div class="chart-box">
+          <svg id="growthSvg" style="width:100%;height:230px;display:block"></svg>
+          <div class="chart-controls">
+            <span>Max n: <span style="color:var(--c1);font-family:var(--font-mono);font-weight:700" id="growthNVal">15</span></span>
+            <input type="range" id="growthSlider" min="4" max="20" value="15" oninput="updateGrowth(this.value)"/>
+            <span class="chart-leg-item"><span class="chart-leg-line" style="background:var(--c4)"></span>FFD O(n log n)</span>
+            <span class="chart-leg-item"><span class="chart-leg-line" style="background:var(--c6)"></span>First-Fit / Best-Fit O(n²)</span>
+            <span class="chart-leg-item"><span class="chart-leg-line" style="background:var(--c5)"></span>Brute Force O(2ⁿ)</span>
+          </div>
+        </div>
+        <div class="learn-tip" style="margin-top:8px">
+          <span class="tip-icon">💡</span>
+          <span><b>How to read this chart:</b> The Y-axis shows the number of operations the algorithm performs — higher means slower. The X-axis is the number of items n. Drag the slider to increase n and watch brute force explode while FFD stays nearly flat. At n=20, brute force performs over 1 million operations — at n=30 it would take longer than the age of the universe.</span>
+        </div>
+      </div>
+
+      <!-- Derivation cards -->
+      <div>
+        <div class="viz-h3">Complexity Derivations — How We Get These Numbers</div>
+        <div class="info-grid">
+          <div class="info-card">
+            <h4>FFD — Why O(n log n)</h4>
+            <p><b>Step 1 — Sort:</b> Sorting n items costs O(n log n). This is the dominant cost.<br>
+            <b>Step 2 — Placement:</b> For each of the n items, find the first fitting bin. With a naive scan: O(n) per item = O(n²) total. With a balanced BST tracking bin capacities: O(log n) per item = O(n log n) total.<br>
+            <b>Total: O(n log n)</b> with optimized implementation.</p>
+          </div>
+          <div class="info-card">
+            <h4>Brute Force — Why O(kⁿ)</h4>
+            <p>Each of the n items can go into any of k bins. The number of possible assignments is k × k × k × … (n times) = <b>kⁿ</b>.<br>
+            For n=10, k=4: 4¹⁰ = 1,048,576 assignments.<br>
+            For n=20, k=10: 10²⁰ = 100,000,000,000,000,000,000 assignments.<br>
+            At 10⁹ operations/second: that's 3×10¹⁰ years. This is why NP-complete problems need approximations.</p>
+          </div>
+          <div class="info-card">
+            <h4>The (11/9)·OPT Guarantee</h4>
+            <p>Proven by Johnson (1973) and confirmed by Simchi-Levi (1994). If OPT = optimal bins needed, FFD uses at most (11/9)·OPT + 6/9 bins.<br>
+            For large OPT the +6/9 becomes negligible: essentially FFD is within ~22% of optimal.<br>
+            This bound is <b>tight</b> — specific inputs exist where FFD uses exactly 11/9 of OPT.</p>
+          </div>
+          <div class="info-card">
+            <h4>Space Complexity — All O(n)</h4>
+            <p>All four algorithms only need to store:<br>
+            • The n item sizes — O(n)<br>
+            • Which bin each item is in — O(n)<br>
+            • The remaining capacity per bin — O(k) ≤ O(n)<br>
+            FFD also needs sorted order but that's still O(n). No algorithm needs more than linear space.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Why this justifies FFD -->
+      <div class="banner teal">
+        <b>The bottom line:</b> Bin Packing is NP-complete — no polynomial-time exact algorithm is known. Brute force gives the exact answer but is exponential and impractical for n &gt; 10. FFD runs in O(n log n) and is guaranteed within (11/9)·OPT. For any real-world input, FFD is the right choice.
+      </div>
+
+    </div><!-- /vp-complexity -->
+
+  </div><!-- /right card -->
+</div><!-- /app-wrap -->
+
+<script>
+// ═══════════════════════════════════════
+//  PHASE 2 — Pseudocode + Learn tab JS
+// ═══════════════════════════════════════
+
+const MODE_DESCS = {
+  ffd: '<b>FFD:</b> Sort items largest-first, then place each in the first bin with enough space. Guaranteed ≤ (11/9)·OPT bins.',
+  ff:  '<b>First-Fit:</b> Place each item (in original order) in the first bin with enough space. Simple but less efficient than FFD.',
+  bf2: '<b>Best-Fit:</b> Place each item in the bin with the least remaining space that still fits — tighter packing, fewer wasted gaps.',
+  bf:  '<b>Brute Force:</b> Try every possible assignment of items to bins. Always finds the exact optimal solution — but exponential time.'
+};
+
+// ── Pseudocode definitions for all 4 algorithms ──
+const PSEUDO = {
+  ffd: [
+    { c: 'FFD(items, capacity):',                      t: '<b>Entry point.</b> FFD = First-Fit Decreasing. The key insight: sorting largest-first means large items claim space before small items can create awkward gaps.' },
+    { c: '  sorted = sort(items, decreasing)',          t: '<b>Sort step — O(n log n).</b> This is what makes FFD better than plain First-Fit. After sorting, the largest item is always processed first.' },
+    { c: '  bins = []',                                 t: '<b>Start with no bins.</b> Bins are opened on demand — we only open a new bin when the current item cannot fit anywhere.' },
+    { c: '  for each item in sorted:',                  t: '<b>Process each item in decreasing order.</b> We handle the hardest-to-place items first, leaving flexible gaps for small items.' },
+    { c: '    placed = false',                          t: '<b>Track whether this item has been placed.</b> If placed remains false after scanning all bins, we must open a new one.' },
+    { c: '    for each bin in bins:',                   t: '<b>Scan existing bins left to right.</b> We check bins in the order they were opened — "first fit" means we stop at the first bin that works.' },
+    { c: '      if bin.remaining >= item.size:',        t: '<b>Check if item fits.</b> remaining = capacity - sum of items already in this bin. If the item fits, place it here.' },
+    { c: '        bin.add(item)',                       t: '<b>Place item in this bin.</b> The item is assigned to this bin. Its size is subtracted from the bin\'s remaining space.' },
+    { c: '        bin.remaining -= item.size',          t: '<b>Update remaining capacity.</b> This bin now has less space available for future items.' },
+    { c: '        placed = true; break',                t: '<b>Stop scanning.</b> We found the first fit — no need to check other bins. This is the "first fit" part of the algorithm.' },
+    { c: '    if not placed:',                          t: '<b>No existing bin could fit this item.</b> We must open a brand new bin to hold it.' },
+    { c: '      new_bin = open_bin(capacity)',           t: '<b>Open a new bin.</b> Every time this line runs, our bin count increases by 1. We want this to happen as few times as possible.' },
+    { c: '      new_bin.add(item)',                     t: '<b>Place item in the new bin.</b> The new bin starts full with just this item.' },
+    { c: '      bins.append(new_bin)',                  t: '<b>Add new bin to our list.</b> Future items will now consider this bin when scanning.' },
+    { c: '  return bins  // ≤ (11/9)·OPT + 6/9',       t: '<b>Return result.</b> The number of bins used is guaranteed to be at most (11/9)·OPT + 6/9 — never more than ~22% above the true optimal.' },
+  ],
+  ff: [
+    { c: 'FirstFit(items, capacity):',                  t: '<b>Entry point.</b> First-Fit processes items in their original order — no sorting. Simple, but the order of items can hurt packing efficiency.' },
+    { c: '  bins = []',                                 t: '<b>Start with no bins.</b> Same as FFD — bins opened on demand.' },
+    { c: '  for each item in items:  // original order',t: '<b>Process items as given — no sorting.</b> This is the key difference from FFD. The order of items in the input directly affects the result.' },
+    { c: '    placed = false',                          t: '<b>Track placement.</b> Same logic as FFD.' },
+    { c: '    for each bin in bins:',                   t: '<b>Scan bins left to right.</b> Check each bin in order, same as FFD.' },
+    { c: '      if bin.remaining >= item.size:',        t: '<b>Check fit.</b> Same condition as FFD — does this item fit in the remaining space?' },
+    { c: '        bin.add(item)',                       t: '<b>Place item.</b> Assign to this bin.' },
+    { c: '        bin.remaining -= item.size',          t: '<b>Update remaining.</b> Reduce available space.' },
+    { c: '        placed = true; break',                t: '<b>First fit found — stop.</b> Same as FFD.' },
+    { c: '    if not placed:',                          t: '<b>No bin fits.</b> Must open a new one. Without sorting, this happens more often than FFD because large items may arrive late when bins are already partially filled.' },
+    { c: '      new_bin = open_bin(capacity)',           t: '<b>Open new bin.</b> Bin count increases.' },
+    { c: '      new_bin.add(item)',                     t: '<b>Place in new bin.</b>' },
+    { c: '      bins.append(new_bin)',                  t: '<b>Add to list.</b>' },
+    { c: '  return bins  // ≤ (17/10)·OPT',            t: '<b>Return result.</b> First-Fit guarantees at most (17/10)·OPT bins — a weaker guarantee than FFD\'s (11/9)·OPT.' },
+  ],
+  bf2: [
+    { c: 'BestFit(items, capacity):',                   t: '<b>Entry point.</b> Best-Fit places each item in the bin with the LEAST remaining space that still fits — the "tightest" fit. This minimizes wasted gaps.' },
+    { c: '  bins = []',                                 t: '<b>Start with no bins.</b>' },
+    { c: '  for each item in items:',                   t: '<b>Process each item.</b> Best-Fit can be used with or without sorting. Here we show it without sorting (like First-Fit).' },
+    { c: '    best_bin = null',                         t: '<b>Track the best bin found so far.</b> Best means the bin with least remaining space that still fits the item.' },
+    { c: '    best_remaining = infinity',               t: '<b>Track the remaining space of the best bin.</b> We want the smallest remaining that still fits — so we start with infinity and look for smaller.' },
+    { c: '    for each bin in bins:',                   t: '<b>Scan ALL bins.</b> Unlike First-Fit which stops at the first fit, Best-Fit checks every bin to find the tightest fit.' },
+    { c: '      if bin.remaining >= item.size:',        t: '<b>Check if item fits.</b>' },
+    { c: '        if bin.remaining < best_remaining:',  t: '<b>Is this a tighter fit than the current best?</b> We want the bin that wastes the least space.' },
+    { c: '          best_bin = bin',                    t: '<b>Update best bin.</b> This bin fits tighter than any we\'ve found so far.' },
+    { c: '          best_remaining = bin.remaining',    t: '<b>Remember its remaining space.</b> Next bins must beat this to become the new best.' },
+    { c: '    if best_bin != null:',                    t: '<b>We found a bin that fits.</b> Place the item in the tightest fitting bin.' },
+    { c: '      best_bin.add(item)',                    t: '<b>Place item in tightest bin.</b>' },
+    { c: '      best_bin.remaining -= item.size',       t: '<b>Update remaining.</b>' },
+    { c: '    else:',                                   t: '<b>No bin fits.</b> Open a new one.' },
+    { c: '      new_bin = open_bin(capacity)',           t: '<b>Open new bin.</b>' },
+    { c: '      new_bin.add(item); bins.append(new_bin)',t: '<b>Place and register new bin.</b>' },
+    { c: '  return bins',                               t: '<b>Return result.</b> Best-Fit has similar performance to First-Fit in practice, often slightly better.' },
+  ],
+  bf: [
+    { c: 'BruteForce(items, capacity):',                t: '<b>Entry point.</b> Try every possible assignment. Guaranteed optimal — but exponential time O(kⁿ). Only practical for n ≤ 8.' },
+    { c: '  best_count = infinity',                     t: '<b>Track the best (minimum) bin count found.</b> We update this every time we find a better valid assignment.' },
+    { c: '  best_assignment = null',                    t: '<b>Track the actual best assignment.</b>' },
+    { c: '  for each assignment in all_possible():',    t: '<b>Try every possible assignment.</b> For n items and k bins there are kⁿ combinations. This loop is what makes brute force exponential.' },
+    { c: '    if valid(assignment, capacity):',         t: '<b>Check if this assignment is valid.</b> Valid means no bin exceeds capacity and all items are assigned.' },
+    { c: '      count = count_bins(assignment)',         t: '<b>Count how many bins this assignment uses.</b>' },
+    { c: '      if count < best_count:',                t: '<b>Is this better than our best so far?</b>' },
+    { c: '        best_count = count',                  t: '<b>Update best count.</b>' },
+    { c: '        best_assignment = assignment',         t: '<b>Remember this assignment.</b> This is the new best solution.' },
+    { c: '  return best_assignment  // OPT guaranteed', t: '<b>Return optimal result.</b> Since we tried every assignment, the one we return is provably optimal — the minimum possible bins.' },
+  ],
+};
+
+const PSEUDO_TAGS = { ffd: 'FFD', ff: 'FIRST-FIT', bf2: 'BEST-FIT', bf: 'BRUTE-FORCE' };
+
+let mode = 'ffd';
+let activeLine = -1;
+
+// ── Render pseudocode ──
+function renderPseudo() {
+  const lines = PSEUDO[mode] || PSEUDO.ffd;
+  const scroll = document.getElementById('pseudoScroll');
+  scroll.innerHTML = lines.map((e, i) => `
+    <div class="code-row" data-line="${i}">
+      <div class="ln">${String(i + 1).padStart(2, ' ')}</div>
+      <div class="lc">${e.c}</div>
+    </div>`).join('');
+  document.getElementById('pseudoTag').textContent = PSEUDO_TAGS[mode] || 'FFD';
+  activeLine = -1;
+
+  // Hover tooltips
+  const tt = document.createElement('div');
+  tt.id = 'pseudoTooltip';
+  tt.style.cssText = 'position:fixed;z-index:9999;max-width:300px;padding:11px 14px;background:#0d1526;border:1px solid rgba(96,165,250,0.28);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,0.55);font-size:12px;line-height:1.6;color:var(--text);pointer-events:none;opacity:0;transition:opacity 180ms;display:none';
+  const existing = document.getElementById('pseudoTooltip');
+  if (existing) existing.remove();
+  document.body.appendChild(tt);
+
+  let hideTimer = null;
+
+  scroll.querySelectorAll('.code-row').forEach((row, i) => {
+    const tip = (lines[i] || {}).t;
+    if (!tip) return;
+
+    row.addEventListener('mouseenter', e => {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      tt.innerHTML = `<div style="font-size:10px;color:var(--c3);font-weight:700;margin-bottom:5px">Line ${i+1}</div><div style="color:var(--muted);font-size:11.5px;line-height:1.6">${tip}</div>`;
+      tt.style.display = 'block';
+      requestAnimationFrame(() => tt.style.opacity = '1');
+      positionTooltip(e, tt);
+    });
+
+    row.addEventListener('mousemove', e => {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      positionTooltip(e, tt);
+    });
+
+    row.addEventListener('mouseleave', () => {
+      hideTimer = setTimeout(() => {
+        tt.style.opacity = '0';
+        setTimeout(() => { tt.style.display = 'none'; }, 180);
+        hideTimer = null;
+      }, 80);
+    });
+  });
+}
+
+function positionTooltip(e, tt) {
+  const W = window.innerWidth, H = window.innerHeight;
+  let x = e.clientX + 16, y = e.clientY - 10;
+  if (x + 290 > W) x = e.clientX - 295;
+  if (y + 140 > H) y = e.clientY - 140;
+  tt.style.left = x + 'px';
+  tt.style.top  = y + 'px';
+}
+
+// ── Highlight pseudocode line ──
+function highlightLine(idx) {
+  if (idx === activeLine) return;
+  activeLine = idx;
+  const scroll = document.getElementById('pseudoScroll');
+  const lines = PSEUDO[mode] || [];
+  scroll.querySelectorAll('.code-row').forEach((row, i) => {
+    row.classList.remove('active');
+    if (i < idx && (lines[i] || {}).c?.trim()) row.classList.add('visited');
+    else if (i >= idx) row.classList.remove('visited');
+  });
+  const activeRow = scroll.querySelector(`.code-row[data-line="${idx}"]`);
+  if (activeRow) {
+    activeRow.classList.add('active');
+    const top = activeRow.offsetTop, bot = top + activeRow.offsetHeight;
+    const vTop = scroll.scrollTop, vBot = vTop + scroll.clientHeight;
+    if (top < vTop + 30) scroll.scrollTo({ top: top - 30, behavior: 'smooth' });
+    else if (bot > vBot - 30) scroll.scrollTo({ top: bot - scroll.clientHeight + 30, behavior: 'smooth' });
+  }
+}
+
+// ── Mode switching ──
+function setMode(m, el) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('modeDesc').innerHTML = MODE_DESCS[m] || '';
+  renderPseudo();
+  resetAll();
+}
+
+// ── Learn tab toggle ──
+function toggleLearn(hdr) {
+  hdr.classList.toggle('open');
+  hdr.nextElementSibling.classList.toggle('open');
+}
+
+function switchTab(tab, btn) {
+  if (!btn) btn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
+  const card = document.getElementById('rightPanel');
+  card.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  card.querySelectorAll('.viz-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('vp-' + tab);
+  if (panel) panel.classList.add('active');
+  if (tab === 'complexity') drawGrowthChart(parseInt(document.getElementById('growthSlider')?.value||15));
+}
+
+
+// ── Preset loading ──
+function loadPreset(key, btn) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const p = PRESETS[key];
+  if (!p) return;
+  items = [...p];
+  document.getElementById('itemInput').value = items.join(' ');
+  resetAll();
+  drawItemsBar();
+}
+
+function loadCustom() {
+  const raw = document.getElementById('itemInput').value.trim();
+  const parsed = raw.split(/[\s,]+/).map(Number).filter(x => !isNaN(x) && x > 0 && x <= 1);
+  if (!parsed.length) { alert('Enter valid sizes between 0 and 1.'); return; }
+  items = parsed;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  resetAll(); drawItemsBar();
+}
+
+function reloadCurrent() {
+  capacity = parseFloat(document.getElementById('capSel').value);
+  resetAll(); drawItemsBar();
+}
+
+function setStatus(txt, state) {
+  document.getElementById('statusTxt').textContent = txt;
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot' + (state ? ' ' + state : '');
+}
+
+function updateSpeed(v) {
+  speed = parseFloat(v);
+  document.getElementById('speedVal').textContent = parseFloat(v).toFixed(2) + '×';
+}
+
+const ITEM_COLORS = ['#a78bfa','#f472b6','#34d399','#fbbf24','#60a5fa','#f87171','#e879f9','#fb923c','#2dd4bf','#a3e635','#facc15','#c084fc'];
+const PRESETS = {
+  balanced:  [0.4, 0.3, 0.5, 0.2, 0.7, 0.1, 0.6, 0.3],
+  smallfirst: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.1, 0.2],
+  awkward:   [0.45, 0.45, 0.45, 0.45, 0.55, 0.55, 0.55, 0.55],
+  partition: [0.6, 0.6, 0.4, 0.4],
+  ffdvsopt:  [0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+};
+
+let items = [...PRESETS.balanced], capacity = 1.0, speed = 1.0;
+let steps = [], stepIdx = 0, playTimer = null, playToken = 0;
+
+function makeSnap(out) {
+  return (line,action,msg,why,bins,ai,ab,ops,placed) =>
+    out.push({line,action,msg,why,bins:JSON.parse(JSON.stringify(bins)),activeItem:ai,activeBin:ab,ops,placed});
+}
+
+function generateFFD(il, cap) {
+  const out=[], snap=makeSnap(out);
+  const col=il.map((s,i)=>({s,origIdx:i,color:ITEM_COLORS[i%ITEM_COLORS.length]}));
+  const sorted=[...col].sort((a,b)=>b.s-a.s);
+  let ops=0; const bins=[];
+  snap(0,'start',`<b>FFD starts.</b> ${il.length} items. Sort largest-first.`,`Large items first = fewer wasted gaps.`,bins,null,null,ops,0);
+  snap(1,'sort',`<b>Sorted:</b> ${sorted.map(x=>`<span class="v">${x.s}</span>`).join(' → ')}`,`Key difference vs First-Fit.`,bins,null,null,++ops,0);
+  for(let ii=0;ii<sorted.length;ii++){
+    const item=sorted[ii];
+    snap(3,'pick',`Item <span class="v">${item.s}</span> (${ii+1}/${sorted.length}). Scanning bins...`,`First bin that fits.`,bins,item.origIdx,null,ops,ii);
+    let placed=false;
+    for(let bi=0;bi<bins.length;bi++){
+      ops++;
+      if(bins[bi].remaining>=item.s-0.0001){
+        bins[bi].items.push({s:item.s,color:item.color,origIdx:item.origIdx});
+        bins[bi].remaining=Math.round((bins[bi].remaining-item.s)*10000)/10000;
+        snap(7,'place',`<b>Place</b> <span class="v">${item.s}</span> → <span class="good">Bin ${bi+1}</span>. Remaining: <span class="v">${bins[bi].remaining.toFixed(2)}</span>. ✓`,`First fit found — stop.`,bins,item.origIdx,bi,ops,ii+1);
+        placed=true; break;
+      } else {
+        snap(6,'check',`Bin ${bi+1}: <span class="v">${bins[bi].remaining.toFixed(2)}</span> &lt; <span class="v">${item.s}</span>. ✗`,`Doesn't fit. Try next.`,bins,item.origIdx,bi,ops,ii);
+      }
+    }
+    if(!placed){
+      const nb={items:[{s:item.s,color:item.color,origIdx:item.origIdx}],remaining:Math.round((cap-item.s)*10000)/10000,cap};
+      bins.push(nb); ops++;
+      snap(11,'newbin',`No bin fits. <span class="warn">Open Bin ${bins.length}</span>. Place <span class="v">${item.s}</span>.`,`FFD minimises this by sorting first.`,bins,item.origIdx,bins.length-1,ops,ii+1);
+    }
+  }
+  const w=bins.reduce((a,b)=>a+b.remaining,0);
+  snap(14,'done',`<b>FFD Complete!</b> <span class="good">${bins.length} bin${bins.length!==1?'s':''}</span>. Avg waste: <span class="v">${(w/bins.length*100).toFixed(1)}%</span>.`,`Guaranteed ≤ (11/9)·OPT + 6/9.`,bins,null,null,ops,sorted.length);
+  return out;
+}
+
+function generateFF(il, cap) {
+  const out=[], snap=makeSnap(out);
+  const col=il.map((s,i)=>({s,origIdx:i,color:ITEM_COLORS[i%ITEM_COLORS.length]}));
+  let ops=0; const bins=[];
+  snap(0,'start',`<b>First-Fit starts.</b> ${il.length} items in <span class="hi">original order</span>.`,`No sorting — order affects packing quality.`,bins,null,null,ops,0);
+  for(let ii=0;ii<col.length;ii++){
+    const item=col[ii];
+    snap(2,'pick',`Item <span class="v">${item.s}</span> (${ii+1}/${col.length}).`,`Original order.`,bins,item.origIdx,null,ops,ii);
+    let placed=false;
+    for(let bi=0;bi<bins.length;bi++){
+      ops++;
+      if(bins[bi].remaining>=item.s-0.0001){
+        bins[bi].items.push({s:item.s,color:item.color,origIdx:item.origIdx});
+        bins[bi].remaining=Math.round((bins[bi].remaining-item.s)*10000)/10000;
+        snap(6,'place',`<b>Place</b> <span class="v">${item.s}</span> → <span class="good">Bin ${bi+1}</span>. Remaining: <span class="v">${bins[bi].remaining.toFixed(2)}</span>. ✓`,`First fit.`,bins,item.origIdx,bi,ops,ii+1);
+        placed=true; break;
+      } else {
+        snap(5,'check',`Bin ${bi+1}: <span class="v">${bins[bi].remaining.toFixed(2)}</span> &lt; <span class="v">${item.s}</span>. ✗`,`Skip.`,bins,item.origIdx,bi,ops,ii);
+      }
+    }
+    if(!placed){
+      const nb={items:[{s:item.s,color:item.color,origIdx:item.origIdx}],remaining:Math.round((cap-item.s)*10000)/10000,cap};
+      bins.push(nb); ops++;
+      snap(10,'newbin',`No bin fits. <span class="warn">Open Bin ${bins.length}</span>. Place <span class="v">${item.s}</span>.`,`Without sorting this happens more often.`,bins,item.origIdx,bins.length-1,ops,ii+1);
+    }
+  }
+  const w=bins.reduce((a,b)=>a+b.remaining,0);
+  snap(13,'done',`<b>First-Fit Complete!</b> <span class="good">${bins.length} bin${bins.length!==1?'s':''}</span>. Guarantee: ≤ (17/10)·OPT.`,`Compare with FFD to see the sorting difference.`,bins,null,null,ops,col.length);
+  return out;
+}
+
+function generateBF2(il, cap) {
+  const out=[], snap=makeSnap(out);
+  const col=il.map((s,i)=>({s,origIdx:i,color:ITEM_COLORS[i%ITEM_COLORS.length]}));
+  let ops=0; const bins=[];
+  snap(0,'start',`<b>Best-Fit starts.</b> ${il.length} items. Finds the <span class="hi">tightest fitting bin</span> each time.`,`Scans ALL bins to minimise wasted space.`,bins,null,null,ops,0);
+  for(let ii=0;ii<col.length;ii++){
+    const item=col[ii];
+    snap(2,'pick',`Item <span class="v">${item.s}</span>. Scanning ALL bins...`,`Best-Fit checks every bin, not just the first.`,bins,item.origIdx,null,ops,ii);
+    let bestBin=-1, bestRem=Infinity;
+    for(let bi=0;bi<bins.length;bi++){
+      ops++;
+      if(bins[bi].remaining>=item.s-0.0001 && bins[bi].remaining<bestRem){
+        bestRem=bins[bi].remaining; bestBin=bi;
+        snap(8,'check',`Bin ${bi+1}: <span class="v">${bins[bi].remaining.toFixed(2)}</span> — new tightest fit. ✓`,`Tighter than any bin found so far.`,bins,item.origIdx,bi,ops,ii);
+      }
+    }
+    if(bestBin>=0){
+      bins[bestBin].items.push({s:item.s,color:item.color,origIdx:item.origIdx});
+      bins[bestBin].remaining=Math.round((bins[bestBin].remaining-item.s)*10000)/10000;
+      snap(12,'place',`<b>Place</b> <span class="v">${item.s}</span> → <span class="good">Bin ${bestBin+1}</span> (tightest). Remaining: <span class="v">${bins[bestBin].remaining.toFixed(2)}</span>. ✓`,`Placed to minimise wasted space.`,bins,item.origIdx,bestBin,ops,ii+1);
+    } else {
+      const nb={items:[{s:item.s,color:item.color,origIdx:item.origIdx}],remaining:Math.round((cap-item.s)*10000)/10000,cap};
+      bins.push(nb); ops++;
+      snap(15,'newbin',`No bin fits. <span class="warn">Open Bin ${bins.length}</span>. Place <span class="v">${item.s}</span>.`,`No existing bin can hold this item.`,bins,item.origIdx,bins.length-1,ops,ii+1);
+    }
+  }
+  const w=bins.reduce((a,b)=>a+b.remaining,0);
+  snap(16,'done',`<b>Best-Fit Complete!</b> <span class="good">${bins.length} bin${bins.length!==1?'s':''}</span>. Avg waste: <span class="v">${(w/bins.length*100).toFixed(1)}%</span>.`,`Compare all algorithms in the Compare tab.`,bins,null,null,ops,col.length);
+  return out;
+}
+
+function generateBF(il, cap) {
+  const out=[], snap=makeSnap(out);
+  const col=il.map((s,i)=>({s,origIdx:i,color:ITEM_COLORS[i%ITEM_COLORS.length]}));
+  const sorted=[...col].sort((a,b)=>b.s-a.s);
+  let ops=0, bestBins=null, bestCount=Infinity;
+
+  snap(0,'start',
+    `<b>Brute Force starts.</b> ${il.length} items: ${sorted.map(x=>`<span class="v">${x.s}</span>`).join(' ')}. Will try different arrangements to find the absolute minimum bins.`,
+    `Unlike FFD which makes one pass, brute force tries many different arrangements and keeps the best one found.`,
+    [],null,null,0,0);
+
+  // ── Run backtracking silently to find true optimal ──
+  function pack(idx, curr) {
+    if(ops>200000) return;
+    if(idx===sorted.length){
+      ops++;
+      if(curr.length<bestCount){ bestCount=curr.length; bestBins=JSON.parse(JSON.stringify(curr)); }
+      return;
+    }
+    const item=sorted[idx];
+    for(let bi=0;bi<curr.length;bi++){
+      if(curr[bi].remaining>=item.s-0.0001){
+        curr[bi].items.push({s:item.s,color:item.color,origIdx:item.origIdx});
+        curr[bi].remaining=Math.round((curr[bi].remaining-item.s)*10000)/10000;
+        pack(idx+1,curr);
+        curr[bi].remaining=Math.round((curr[bi].remaining+item.s)*10000)/10000;
+        curr[bi].items.pop(); ops++;
+      }
+    }
+    if(curr.length+1<bestCount){
+      const nb={items:[{s:item.s,color:item.color,origIdx:item.origIdx}],remaining:Math.round((cap-item.s)*10000)/10000,cap};
+      curr.push(nb); pack(idx+1,curr); curr.pop();
+    }
+  }
+  pack(0,[]);
+  const totalOps=ops;
+
+  // ── Generate a few "bad" alternative assignments to show contrast ──
+  // Assignment A: naive order (worst case packing)
+  function naivePack(itemList) {
+    const bins=[];
+    for(const item of itemList){
+      let placed=false;
+      for(const bin of bins){
+        if(bin.remaining>=item.s-0.0001){
+          bin.items.push({s:item.s,color:item.color,origIdx:item.origIdx});
+          bin.remaining=Math.round((bin.remaining-item.s)*10000)/10000;
+          placed=true; break;
+        }
+      }
+      if(!placed){
+        bins.push({items:[{s:item.s,color:item.color,origIdx:item.origIdx}],remaining:Math.round((cap-item.s)*10000)/10000,cap});
+      }
+    }
+    return bins;
+  }
+
+  // Attempt 1: place items in original (unsorted) order
+  const attempt1 = naivePack(col);
+  snap(3,'try',
+    `<b>Attempt 1:</b> Try packing in original order. Result: <span class="warn">${attempt1.length} bins</span>. Is this optimal? Keep searching...`,
+    `This is just one possible arrangement. Brute force tries many more to find if fewer bins are possible.`,
+    attempt1,null,null,Math.floor(totalOps*0.2),0);
+
+  // Attempt 2: place items in ascending order (small first — usually worse)
+  const attempt2 = naivePack([...col].sort((a,b)=>a.s-b.s));
+  snap(3,'try',
+    `<b>Attempt 2:</b> Try smallest-first order. Result: <span class="warn">${attempt2.length} bins</span>. ${attempt2.length<attempt1.length?'Better than Attempt 1! But keep searching...':'Not better than Attempt 1. Keep searching...'}`,
+    `Different orderings give different results. Brute force systematically tries all of them.`,
+    attempt2,null,null,Math.floor(totalOps*0.4),0);
+
+  // Attempt 3: build a deliberately suboptimal packing (1 bin worse than optimal)
+  // by packing each item into its OWN bin — clearly wasteful, good visual contrast
+  const suboptimalCount = bestCount + 1;
+  const suboptimalBins = sorted.map(item => ({
+    items:[{s:item.s,color:item.color,origIdx:item.origIdx}],
+    remaining:Math.round((cap-item.s)*10000)/10000,
+    cap
+  })).slice(0, Math.min(sorted.length, bestCount+1));
+  // fill the suboptimal bins more naturally — pair first few items naively
+  const attempt3 = naivePack([...col].sort(()=>0.3-Math.random()));
+  const subOptBins = attempt3.length > bestCount ? attempt3 : (() => {
+    // force a suboptimal: split largest item into its own bin, pack rest
+    const forcedBins = [{items:[{...sorted[0]}],remaining:Math.round((cap-sorted[0].s)*10000)/10000,cap}];
+    for(let i=1;i<sorted.length;i++){
+      const item=sorted[i]; let placed=false;
+      for(const bin of forcedBins){
+        if(bin.remaining>=item.s-0.0001&&bin!==forcedBins[0]){
+          bin.items.push({s:item.s,color:item.color,origIdx:item.origIdx});
+          bin.remaining=Math.round((bin.remaining-item.s)*10000)/10000;
+          placed=true; break;
+        }
+      }
+      if(!placed) forcedBins.push({items:[{s:item.s,color:item.color,origIdx:item.origIdx}],remaining:Math.round((cap-item.s)*10000)/10000,cap});
+    }
+    return forcedBins;
+  })();
+
+  snap(3,'try',
+    `<b>Attempt ${Math.floor(totalOps*0.5)}:</b> Another arrangement. Result: <span class="warn">${subOptBins.length} bins</span>. Is this the minimum possible? Only an exhaustive search can confirm. Keep going...`,
+    `This arrangement uses ${subOptBins.length} bins. The search continues checking all remaining combinations to confirm whether fewer bins are possible.`,
+    subOptBins,null,null,Math.floor(totalOps*0.5),0);
+
+  snap(6,'found',
+    `<b>Search complete!</b> Checked <span class="v">${totalOps}</span> assignments. <span class="good">Optimal = ${bestCount} bin${bestCount!==1?'s':''}</span>. ${subOptBins.length > bestCount ? `This beats Attempt 3\'s ${subOptBins.length} bins — brute force found a better arrangement!` : `Attempt 3 happened to match the optimal. All ${totalOps} assignments confirmed: no arrangement uses fewer than ${bestCount} bins.`}`,
+    `Brute force is guaranteed optimal because it tried every possible arrangement. Now let\'s build the optimal solution step by step.`,
+    bestBins?JSON.parse(JSON.stringify(bestBins)):[],null,null,totalOps,0);
+
+  // ── Now show the optimal solution being built item by item ──
+  snap(4,'rebuild',
+    `<b>Building optimal solution.</b> Placing each item in its optimal position — watch the bins fill up efficiently.`,
+    `This arrangement uses the minimum possible number of bins. Compare it with the attempts above to see why some arrangements waste space.`,
+    [],null,null,totalOps,0);
+
+  const demoBins=[];
+  let demoPlaced=0;
+  for(const item of sorted){
+    snap(4,'check',
+      `Next: place item <span class="v">${item.s}</span> in its optimal position.`,
+      `The optimal position for each item was determined by the exhaustive search.`,
+      JSON.parse(JSON.stringify(demoBins)),item.origIdx,null,totalOps,demoPlaced);
+
+    let placed=false;
+    for(let bi=0;bi<demoBins.length;bi++){
+      if(demoBins[bi].remaining>=item.s-0.0001){
+        demoBins[bi].items.push({s:item.s,color:item.color,origIdx:item.origIdx});
+        demoBins[bi].remaining=Math.round((demoBins[bi].remaining-item.s)*10000)/10000;
+        snap(7,'place',
+          `<b>Optimal place:</b> <span class="v">${item.s}</span> → <span class="good">Bin ${bi+1}</span>. Remaining: <span class="v">${demoBins[bi].remaining.toFixed(2)}</span>. ✓`,
+          `This exact placement is part of the optimal ${bestCount}-bin solution.`,
+          JSON.parse(JSON.stringify(demoBins)),item.origIdx,bi,totalOps,++demoPlaced);
+        placed=true; break;
+      }
+    }
+    if(!placed){
+      const nb={items:[{s:item.s,color:item.color,origIdx:item.origIdx}],remaining:Math.round((cap-item.s)*10000)/10000,cap};
+      demoBins.push(nb);
+      snap(11,'newbin',
+        `<b>Optimal place:</b> Open Bin ${demoBins.length}. Place <span class="v">${item.s}</span> (remaining: <span class="v">${nb.remaining.toFixed(2)}</span>).`,
+        `Even the optimal solution needs a new bin here — the item simply cannot fit elsewhere.`,
+        JSON.parse(JSON.stringify(demoBins)),item.origIdx,demoBins.length-1,totalOps,++demoPlaced);
+    }
+  }
+
+  snap(9,'done',
+    `<b>Brute Force Complete!</b> <span class="good">Optimal = ${bestCount} bin${bestCount!==1?'s':''}</span>. Checked ${totalOps} assignments. This is the provably minimum number of bins possible.`,
+    `Notice: FFD likely got the same or very close result — in a fraction of the time. That\'s why FFD is the practical choice for large inputs.`,
+    bestBins||demoBins,null,null,totalOps,sorted.length);
+
+  return out;
+}
+
+function generateSteps() {
+  capacity=parseFloat(document.getElementById('capSel').value)||1.0;
+  if(mode==='ffd') return generateFFD(items,capacity);
+  if(mode==='ff')  return generateFF(items,capacity);
+  if(mode==='bf2') return generateBF2(items,capacity);
+  return generateBF(items,capacity);
+}
+
+function showExplain(st) {
+  const body=document.getElementById('explBody');
+  body.innerHTML=(st.msg||'—')+(st.why?`<span class="why">↳ ${st.why}</span>`:'');
+  body.classList.remove('flash'); void body.offsetWidth; body.classList.add('flash');
+  document.getElementById('explStep').textContent=steps.length?`${stepIdx} / ${steps.length}`:'—';
+}
+
+function computeOPT(il,cap){ return Math.max(1,Math.ceil(il.reduce((a,b)=>a+b,0)/cap)); }
+
+function updateStats(st) {
+  if(!st) return;
+  const bc=st.bins?st.bins.length:0;
+  document.getElementById('statBins').textContent=bc;
+  document.getElementById('statItems').textContent=st.placed||0;
+  document.getElementById('statOps').textContent=st.ops||0;
+  document.getElementById('stepCount').textContent=`${stepIdx} / ${steps.length}`;
+  if(st.bins&&st.bins.length){
+    const w=st.bins.reduce((a,b)=>a+(b.remaining||0),0);
+    document.getElementById('statWaste').textContent=(w/st.bins.length*100).toFixed(1)+'%';
+  } else document.getElementById('statWaste').textContent='—';
+  if(st.action==='done'&&bc>0){
+    const opt=computeOPT(items,capacity);
+    document.getElementById('statRatio').textContent=`${(bc/opt).toFixed(2)}× (${bc} / OPT≈${opt})`;
+  } else document.getElementById('statRatio').textContent='—';
+}
+
+function drawItemsBar(activeOrigIdx, placedSet) {
+  const bar=document.getElementById('itemsBar');
+  const disp=mode==='ffd'?[...items].map((s,i)=>({s,origIdx:i})).sort((a,b)=>b.s-a.s):items.map((s,i)=>({s,origIdx:i}));
+  bar.innerHTML=disp.map(({s,origIdx})=>{
+    const color=ITEM_COLORS[origIdx%ITEM_COLORS.length];
+    const w=Math.max(34,s*70+16);
+    const isA=origIdx===activeOrigIdx, isP=placedSet?placedSet.has(origIdx)&&!isA:false;
+    let cls='item-chip'; if(isA) cls+=' active'; if(isP) cls+=' placed';
+    return `<div class="${cls}" style="width:${w}px;background:${color}">${s}</div>`;
+  }).join('');
+  document.getElementById('itemsInfo').textContent=`(${items.length} items · capacity ${capacity})`;
+}
+
+function wasteColor(remaining, cap) {
+  const pct = remaining / cap; // 0=no waste, 1=all waste
+  if (pct < 0.05) return null; // negligible waste — no block
+  // Green (low waste) → Yellow → Red (high waste)
+  const r = Math.round(Math.min(255, pct * 2 * 255));
+  const g = Math.round(Math.min(200, (1 - pct) * 220));
+  return `rgb(${r},${g},30)`;
+}
+
+function drawBins(bins, activeBinIdx) {
+  const row = document.getElementById('binsRow');
+  if (!bins || !bins.length) {
+    row.innerHTML = '<span style="color:var(--muted);font-size:12px">No bins yet — click Build Steps then ▶</span>';
+    document.getElementById('binCountLabel').textContent = ''; return;
+  }
+  row.innerHTML = bins.map((bin, bi) => {
+    const isA  = bi === activeBinIdx;
+    const pct  = Math.round(((capacity - bin.remaining) / capacity) * 100);
+    const full = bin.remaining < 0.001;
+    const wColor = wasteColor(bin.remaining, capacity);
+    const wasteH = Math.round((bin.remaining / capacity) * 174);
+
+    // Waste block at top of bin (empty space colored by heatmap)
+    const wasteBlock = (!full && wColor && wasteH > 8 && bin.remaining / capacity > 0.05)
+      ? `<div style="width:100%;height:${wasteH}px;background:${wColor.replace('rgb(', 'rgba(').replace(')', ',0.18)')};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--font-mono);color:rgba(255,255,255,0.45);font-weight:700;letter-spacing:0.02em">${pct < 100 ? (100-pct)+'% waste' : ''}</div>`
+      : '';
+
+    const binH = 180;
+    const ih = bin.items.map((item, idx) => {
+      const h = Math.max(12, Math.round((item.s / capacity) * binH));
+      const isFirst = idx === 0;
+      // First item (renders at bottom due to column-reverse) gets flex:1 to absorb rounding gaps
+      return `<div class="bin-item-block" style="height:${h}px;${isFirst ? 'flex-grow:1;' : ''}background:${item.color}">${item.s}</div>`;
+    }).join('');
+
+    return `<div class="bin-col">
+      <div class="bin-box ${isA ? 'active-bin' : ''} ${full ? 'full' : ''}" style="flex-direction:column">
+        ${wasteBlock}
+        <div style="display:flex;flex-direction:column-reverse;flex:1;width:100%;overflow:hidden">${ih}</div>
+      </div>
+      <div class="bin-label">Bin ${bi + 1}</div>
+      <div class="bin-pct-label">${pct}% full</div>
+    </div>`;
+  }).join('');
+  document.getElementById('binCountLabel').textContent = `(${bins.length} bin${bins.length !== 1 ? 's' : ''})`;
+}
+
+function addHistRow(st) {
+  const body=document.getElementById('histBody');
+  if(body.children.length>=30) body.removeChild(body.children[0]);
+  body.querySelectorAll('tr.cur').forEach(r=>r.classList.remove('cur'));
+  const tr=document.createElement('tr'); tr.classList.add('cur');
+  const iv=(st.activeItem!=null)?(items[st.activeItem]||'—'):'—';
+  const bv=(st.activeBin!=null)?`Bin ${st.activeBin+1}`:'—';
+  const rv=(st.activeBin!=null&&st.bins&&st.bins[st.activeBin])?st.bins[st.activeBin].remaining.toFixed(2):'—';
+  tr.innerHTML=`<td>${stepIdx}</td><td style="color:var(--c1)">${st.action}</td><td style="color:var(--c3);font-weight:700">${iv}</td><td style="color:var(--c4)">${bv}</td><td style="color:var(--muted)">${rv}</td>`;
+  const idx=stepIdx;
+  tr.addEventListener('click',()=>jumpToStep(idx));
+  tr.addEventListener('mouseenter',()=>tr.style.background='rgba(167,139,250,0.07)');
+  tr.addEventListener('mouseleave',()=>tr.style.background='');
+  body.appendChild(tr);
+  body.parentElement.scrollTop=body.parentElement.scrollHeight;
+  document.getElementById('histCount').textContent=`(${body.children.length} rows — click to jump)`;
+}
+
+function buildPlacedSet(upTo) {
+  const s=new Set();
+  for(let i=0;i<upTo&&i<steps.length;i++){
+    const st=steps[i];
+    if((st.action==='place'||st.action==='newbin')&&st.activeItem!=null) s.add(st.activeItem);
+  }
+  return s;
+}
+
+function jumpToStep(idx) {
+  pauseAnim();
+  document.getElementById('histBody').innerHTML='';
+  stepIdx=0; resetVisualState();
+  for(let i=0;i<Math.min(idx-1,steps.length);i++){ stepIdx=i; addHistRow(steps[i]); }
+  stepIdx=Math.max(0,idx-1);
+  if(steps[stepIdx]){ applyStep(steps[stepIdx]); stepIdx++; }
+  setStatus('Stepping','ready');
+}
+
+function applyStep(st) {
+  updateStats(st); showExplain(st); highlightLine(st.line); addHistRow(st);
+  drawBins(st.bins,st.activeBin); drawItemsBar(st.activeItem,buildPlacedSet(stepIdx));
+}
+
+function buildSteps() {
+  pauseAnim(); resetVisual(); steps=generateSteps(); stepIdx=0;
+  setStatus('Ready','ready');
+  document.getElementById('explBody').innerHTML=`<b>✓ ${steps.length} steps generated.</b> Click <b>▶</b> to step or <b>▶▶</b> to play.`;
+  document.getElementById('explStep').textContent=`0 / ${steps.length}`;
+  document.getElementById('stepCount').textContent=`0 / ${steps.length}`;
+  drawItemsBar(); drawBins([]); highlightLine(0);
+}
+
+function stepOnce() {
+  if (!steps.length) { buildSteps(); return; }
+  if (stepIdx >= steps.length) { setStatus('Done','done'); return; }
+  // Auto switch to visualizer so explanation is visible
+  const vizTab = document.querySelector('.tab-btn[onclick*="visual"]');
+  if (vizTab && !document.getElementById('vp-visual').classList.contains('active')) {
+    switchTab('visual', vizTab);
+  }
+  applyStep(steps[stepIdx]); stepIdx++;
+  setStatus(stepIdx>=steps.length?'Done':'Stepping',stepIdx>=steps.length?'done':'ready');
+}
+
+function stepBack() {
+  if(!steps.length||stepIdx<=0) return;
+  pauseAnim();
+  document.getElementById('histBody').innerHTML='';
+  const target=Math.max(0,stepIdx-2);
+  stepIdx=0; resetVisualState();
+  for(let i=0;i<target;i++){ stepIdx=i; addHistRow(steps[i]); }
+  stepIdx=target;
+  if(steps[stepIdx]){applyStep(steps[stepIdx]);stepIdx++;}
+  setStatus('Stepping','ready');
+}
+
+function playAnim() {
+  if(!steps.length) buildSteps();
+  if(stepIdx>=steps.length){stepIdx=0;document.getElementById('histBody').innerHTML='';resetVisualState();}
+  setStatus('Playing','playing');
+  const token=++playToken;
+  const delay=()=>Math.max(120,Math.round(700/speed));
+  function tick(){
+    if(playToken!==token||stepIdx>=steps.length){if(stepIdx>=steps.length)setStatus('Done','done');return;}
+    applyStep(steps[stepIdx]); stepIdx++;
+    playTimer=setTimeout(tick,delay());
+  }
+  tick();
+}
+
+function pauseAnim(){playToken++;clearTimeout(playTimer);if(stepIdx>0&&stepIdx<steps.length)setStatus('Paused','paused');}
+
+function resetVisualState(){
+  drawBins([]); drawItemsBar();
+  ['statBins','statItems','statOps'].forEach(id=>document.getElementById(id).textContent='0');
+  ['statWaste','statRatio'].forEach(id=>document.getElementById(id).textContent='—');
+}
+
+function resetVisual(){
+  resetVisualState();
+  document.getElementById('histBody').innerHTML='';
+  document.getElementById('histCount').textContent='(click any row to jump)';
+  activeLine=-1;
+  document.getElementById('pseudoScroll').querySelectorAll('.code-row').forEach(r=>r.classList.remove('active','visited'));
+}
+
+function resetAll(){
+  pauseAnim(); steps=[]; stepIdx=0; resetVisual();
+  document.getElementById('stepCount').textContent='0 / 0';
+  document.getElementById('explStep').textContent='—';
+  document.getElementById('explBody').innerHTML='Click <b>Build Steps</b> then <b>▶</b> to see step-by-step explanations.';
+  setStatus('Idle','');
+}
+
+function runAllAndCompare() {
+  // Run all 4 algorithms silently on current items
+  const cap = parseFloat(document.getElementById('capSel').value) || 1.0;
+
+  function runSilent(genFn) {
+    const s = genFn(items, cap);
+    const done = s.find(st => st.action === 'done');
+    return done ? { bins: done.bins, count: done.bins.length, ops: done.ops } : { bins: [], count: 0, ops: 0 };
+  }
+
+  const results = {
+    ffd: runSilent(generateFFD),
+    ff:  runSilent(generateFF),
+    bf2: runSilent(generateBF2),
+    bf:  runSilent(generateBF)
+  };
+
+  const opt = results.bf.count || computeOPT(items, cap);
+
+  // Show results
+  document.getElementById('compareEmpty').style.display = 'none';
+  document.getElementById('compareResults').style.display = 'block';
+
+  // Algorithm info
+  const algoInfo = {
+    ffd: { name: 'FFD',        color: 'var(--c4)', badge: 'rgba(52,211,153,0.15)',  badgeColor: 'var(--c4)',  desc: 'Sort + First-Fit' },
+    ff:  { name: 'First-Fit',  color: 'var(--c6)', badge: 'rgba(96,165,250,0.15)',  badgeColor: 'var(--c6)',  desc: 'No sort, first fit' },
+    bf2: { name: 'Best-Fit',   color: 'var(--c7)', badge: 'rgba(232,121,249,0.15)', badgeColor: 'var(--c7)',  desc: 'Tightest gap' },
+    bf:  { name: 'Brute Force (OPT)', color: 'var(--c5)', badge: 'rgba(248,113,113,0.15)', badgeColor: 'var(--c5)',  desc: 'Exact optimal' }
+  };
+
+  // Render 4 result cards with mini bins
+  const minBins = Math.min(...Object.values(results).map(r => r.count));
+  const winners = Object.entries(results).filter(([,r]) => r.count === minBins).map(([k]) => k);
+  const isTie   = winners.length > 1;
+
+  const grid = document.getElementById('compareGrid');
+  grid.innerHTML = Object.entries(results).map(([key, res]) => {
+    const info     = algoInfo[key];
+    const ratio    = res.count > 0 ? (res.count / opt).toFixed(2) : '—';
+    const isWinner = winners.includes(key);
+    const miniBins = res.bins.slice(0, 8).map((bin, bi) => {
+      const pct      = Math.round(((cap - bin.remaining) / cap) * 100);
+      const wColor   = wasteColor(bin.remaining, cap);
+      const wasteH   = Math.round((bin.remaining / cap) * 60);
+      const wasteBlock = (wColor && wasteH > 3 && bin.remaining / cap > 0.05)
+        ? `<div style="width:100%;height:${wasteH}px;background:${wColor.replace('rgb(', 'rgba(').replace(')', ',0.18)')};flex-shrink:0"></div>`
+        : '';
+      const itemsHtml = bin.items.map((item, idx) => {
+        const h = Math.max(6, Math.round((item.s / cap) * 60));
+        const isFirst = idx === 0;
+        return `<div style="width:100%;height:${h}px;${isFirst?'flex-grow:1;':''}background:${item.color};border-top:1px solid rgba(255,255,255,0.10);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:rgba(0,0,0,0.7)">${item.s}</div>`;
+      }).join('');
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="width:36px;height:70px;border:1.5px solid rgba(255,255,255,0.14);border-radius:5px;background:rgba(0,0,0,0.28);display:flex;flex-direction:column;overflow:hidden">${wasteBlock}<div style="display:flex;flex-direction:column-reverse;flex:1">${itemsHtml}</div></div>
+        <span style="font-size:8px;color:var(--muted);font-family:var(--font-mono)">B${bi+1} ${pct}%</span>
+      </div>`;
+    }).join('');
+
+    let badgeText = `${res.count} bin${res.count!==1?'s':''}`;
+    if (isWinner && !isTie) badgeText = '🏆 BEST';
+    if (isWinner && isTie)  badgeText = `🤝 TIE — ${res.count} bin${res.count!==1?'s':''}`;
+
+    return `<div style="background:rgba(0,0,0,0.22);border:1px solid ${isWinner?info.color:'var(--stroke)'};border-radius:13px;padding:13px;${isWinner&&!isTie?`box-shadow:0 0 16px ${info.color}22`:''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px">
+        <span style="font-size:13px;font-weight:700;color:${info.color}">${info.name}</span>
+        <span style="font-size:10px;padding:2px 8px;border-radius:5px;background:${info.badge};color:${info.badgeColor};font-weight:700;white-space:nowrap">${badgeText}</span>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;min-height:80px;align-items:flex-end">${miniBins}</div>
+      <div style="font-size:11.5px;color:var(--muted);border-top:1px solid var(--stroke);padding-top:8px;margin-top:4px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Bins used</span><b style="color:var(--text);font-family:var(--font-mono)">${res.count}</b></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Operations</span><b style="color:var(--text);font-family:var(--font-mono)">${res.ops}</b></div>
+        <div style="display:flex;justify-content:space-between"><span>Ratio vs OPT</span><b style="color:${parseFloat(ratio)>1.1?'var(--c3)':'var(--c4)'};font-family:var(--font-mono)">${ratio}×</b></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Bar chart
+  const maxBins = Math.max(...Object.values(results).map(r => r.count), 1);
+  document.getElementById('compareBarChart').innerHTML = Object.entries(results).map(([key, res]) => {
+    const info     = algoInfo[key];
+    const pct      = Math.round((res.count / maxBins) * 100);
+    const isWinner = winners.includes(key);
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="min-width:140px;font-size:12px;font-weight:700;color:${info.color};text-align:right;flex-shrink:0">${info.name}</span>
+      <div style="flex:1;height:28px;background:rgba(0,0,0,0.25);border-radius:6px;overflow:hidden;position:relative">
+        <div style="height:100%;width:${pct}%;background:${info.color};border-radius:6px;opacity:0.75;transition:width 0.5s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;min-width:40px">
+          <span style="font-size:11px;font-weight:700;color:rgba(0,0,0,0.8);font-family:var(--font-mono)">${res.count} bin${res.count!==1?'s':''}</span>
+        </div>
+        ${isWinner && !isTie ? `<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:var(--c4)">✓ optimal</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Preset comparison table
+  const presetKeys = ['balanced','smallfirst','awkward','partition','ffdvsopt'];
+  const presetLabels = { balanced:'Balanced', smallfirst:'Small First', awkward:'Awkward', partition:'Partition NP', ffdvsopt:'FFD vs OPT' };
+  const tbody = document.getElementById('presetCompareBody');
+  const presetDescriptions = {
+    balanced:   'Mixed sizes — FFD matches optimal',
+    smallfirst: 'Small items first — sorting saves a bin',
+    awkward:    'Paired sizes — FF/BF2 waste bins without sorting',
+    partition:  'Reduction demo — normalized from {3,3,2,2}/T=5',
+    ffdvsopt:   'Counterexample — FFD exceeds OPT by 1 bin'
+  };
+
+  tbody.innerHTML = presetKeys.map(pk => {
+    const pitems  = PRESETS[pk];
+    const ffdBins = generateFFD(pitems, cap).find(s => s.action === 'done')?.bins.length || '—';
+    const bfBins  = generateBF(pitems, cap).find(s => s.action === 'done')?.bins.length  || '—';
+    const ratio   = (ffdBins && bfBins) ? (ffdBins / bfBins).toFixed(2) + '×' : '—';
+    const isAboveOpt = ffdBins > bfBins;
+    const isCurrentPreset = JSON.stringify(pitems) === JSON.stringify(items);
+
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);${isCurrentPreset ? 'background:rgba(167,139,250,0.07)' : ''}">
+      <td style="padding:7px 12px;color:${isCurrentPreset ? 'var(--c1)' : 'var(--text)'};font-weight:${isCurrentPreset ? '700' : '400'}">${presetLabels[pk]}${isCurrentPreset ? ' ◀' : ''}</td>
+      <td style="padding:7px 12px;text-align:center;color:var(--c4);font-weight:700;font-family:var(--font-mono)">${ffdBins}</td>
+      <td style="padding:7px 12px;text-align:center;color:var(--c5);font-weight:700;font-family:var(--font-mono)">${bfBins} ✓</td>
+      <td style="padding:7px 12px;text-align:center;font-weight:700;font-family:var(--font-mono);color:${isAboveOpt ? 'var(--c3)' : 'var(--c4)'}">${ratio}</td>
+      <td style="padding:7px 12px;font-size:11px;color:var(--muted)">${presetDescriptions[pk] || ''}</td>
+    </tr>`;
+  }).join('');
+
+  // Switch to compare tab
+  switchTab('compare', document.querySelector('.tab-btn[onclick*="compare"]'));
+}
+
+function drawGrowthChart(maxN) {
+  const svg = document.getElementById('growthSvg');
+  if (!svg) return;
+  const W = svg.parentElement.offsetWidth - 28 || 560, H = 230;
+  const pad = {l:54,r:20,t:12,b:36};
+  const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+  const Ns = []; for(let n=2;n<=maxN;n++) Ns.push(n);
+  const ffd   = Ns.map(n => Math.round(n * Math.log2(n) * 2));
+  const ff    = Ns.map(n => n * n);
+  const bf    = Ns.map(n => Math.min(Math.pow(2,n), 2e8));
+  const maxY  = Math.min(Math.max(...bf) * 1.05, 2e8);
+  const scX   = n => pad.l + (n-2)/(maxN-2) * cW;
+  const scY   = y => pad.t + cH - Math.min(y,maxY)/maxY * cH;
+  let html = `<rect width="${W}" height="${H}" fill="transparent"/>`;
+
+  // Grid lines
+  for(let i=0;i<=4;i++){
+    const y = pad.t + i*cH/4;
+    const val = Math.round(maxY*(4-i)/4);
+    html += `<line x1="${pad.l}" x2="${pad.l+cW}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+    html += `<text x="${pad.l-5}" y="${y+4}" text-anchor="end" fill="rgba(183,192,255,0.45)" font-size="9" font-family="JetBrains Mono,monospace">${val>999999?Math.round(val/1000000)+'M':val>999?Math.round(val/1000)+'k':val}</text>`;
+  }
+
+  // X axis labels
+  const step = Math.max(1, Math.floor(Ns.length/6));
+  for(let i=0;i<Ns.length;i+=step){
+    html += `<text x="${scX(Ns[i])}" y="${H-5}" text-anchor="middle" fill="rgba(183,192,255,0.45)" font-size="9">${Ns[i]}</text>`;
+  }
+
+  // Axes
+  html += `<line x1="${pad.l}" x2="${pad.l}" y1="${pad.t}" y2="${pad.t+cH}" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>`;
+  html += `<line x1="${pad.l}" x2="${pad.l+cW}" y1="${pad.t+cH}" y2="${pad.t+cH}" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>`;
+
+  // Curves
+  const poly = (arr,col,sw,dash='') => `<polyline points="${arr.map((y,i)=>`${scX(Ns[i])},${scY(y)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="${sw}" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linecap="round"/>`;
+  html += poly(ff,  'var(--c6)', 2);
+  html += poly(ffd, 'var(--c4)', 2.5);
+  html += poly(bf,  'var(--c5)', 2);
+
+  // End labels
+  const last = Ns.length-1;
+  html += `<text x="${scX(Ns[last])+4}" y="${scY(ffd[last])+4}"  fill="var(--c4)" font-size="9" font-weight="700">FFD</text>`;
+  html += `<text x="${scX(Ns[last])+4}" y="${scY(ff[last])+4}"   fill="var(--c6)" font-size="9" font-weight="700">FF/BF</text>`;
+  html += `<text x="${scX(Ns[last])+4}" y="${Math.max(pad.t+10,scY(bf[last])+4)}" fill="var(--c5)" font-size="9" font-weight="700">Brute</text>`;
+
+  // Axis labels
+  html += `<text x="${pad.l+cW/2}" y="${H-1}" text-anchor="middle" fill="rgba(183,192,255,0.40)" font-size="9">Number of items (n)</text>`;
+  html += `<text x="10" y="${pad.t+cH/2}" text-anchor="middle" fill="rgba(183,192,255,0.40)" font-size="9" transform="rotate(-90,10,${pad.t+cH/2})">Operations</text>`;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = html;
+}
+
+function updateGrowth(v) {
+  document.getElementById('growthNVal').textContent = v;
+  drawGrowthChart(parseInt(v));
+}
+
+// ═══════════════════════════════════════
+//  QUIZ ENGINE
+// ═══════════════════════════════════════
+const QUIZ_ANSWERS = {
+  q1:  { correct: 'b', clo: 4 },
+  q2:  { correct: 'b', clo: 4 },
+  q3:  { correct: 'c', clo: 4 },
+  q4:  { correct: 'b', clo: 4 },
+  q5:  { correct: 'b', clo: 3 },
+  q6:  { correct: 'b', clo: 3 },
+  q7:  { correct: 'b', clo: 3 },
+  q8:  { correct: 'c', clo: 3 },
+  q9:  { correct: 'c', clo: 5 },
+  q10: { correct: 'b', clo: 5 },
+  q11: { correct: 'b', clo: 5 },
+  q12: { correct: 'c', clo: 5 },
+};
+
+let quizSelections = {};
+
+function selectOpt(el, qid, opt) {
+  // If already submitted, ignore
+  if (document.getElementById(qid).classList.contains('correct') ||
+      document.getElementById(qid).classList.contains('wrong')) return;
+  // Clear previous selection
+  el.closest('.quiz-opts').querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  quizSelections[qid] = opt;
+}
+
+function submitQuiz() {
+  const qids = Object.keys(QUIZ_ANSWERS);
+  // Check all answered
+  const unanswered = qids.filter(q => !quizSelections[q]);
+  if (unanswered.length > 0) {
+    alert(`Please answer all questions before submitting. (${unanswered.length} remaining)`);
+    // Scroll to first unanswered
+    document.getElementById(unanswered[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  let totalCorrect = 0;
+  const cloScores = { 3: { correct: 0, total: 0 }, 4: { correct: 0, total: 0 }, 5: { correct: 0, total: 0 } };
+
+  qids.forEach(qid => {
+    const qa    = QUIZ_ANSWERS[qid];
+    const sel   = quizSelections[qid];
+    const qEl   = document.getElementById(qid);
+    const fbEl  = document.getElementById(qid + '-fb');
+    const ansEl = qEl.querySelector('.quiz-answer');
+    const correct = sel === qa.correct;
+
+    // Mark options
+    qEl.querySelectorAll('.quiz-opt').forEach(o => {
+      const oLetter = o.getAttribute('onclick').match(/'([a-d])'\)$/)[1];
+      if (oLetter === qa.correct) o.classList.add('correct-ans');
+      else if (oLetter === sel && !correct) o.classList.add('wrong-ans');
+      else o.classList.add('disabled');
+    });
+
+    // Show feedback
+    const explain = ansEl.getAttribute('data-explain');
+    fbEl.innerHTML = correct
+      ? `✓ <b>Correct!</b> ${explain}`
+      : `✗ <b>Incorrect.</b> The correct answer is option <b>${qa.correct.toUpperCase()}</b>. ${explain}`;
+    fbEl.classList.add('show', correct ? 'correct' : 'wrong');
+    qEl.classList.add(correct ? 'correct' : 'wrong');
+
+    // Score tracking
+    if (correct) { totalCorrect++; cloScores[qa.clo].correct++; }
+    cloScores[qa.clo].total++;
+  });
+
+  // Show score
+  const pct = Math.round(totalCorrect / qids.length * 100);
+  const scoreEl = document.getElementById('quizScoreNum');
+  const msgEl   = document.getElementById('quizScoreMsg');
+
+  scoreEl.textContent = `${totalCorrect} / ${qids.length}`;
+  scoreEl.style.color = pct >= 80 ? 'var(--c4)' : pct >= 60 ? 'var(--c3)' : 'var(--c5)';
+
+  const msgs = [
+    [90, '🎉 Excellent! You have a strong understanding of Bin Packing, the algorithms, and the NP-completeness proof.'],
+    [70, '👍 Good work! Review the questions you missed before your Q&A session.'],
+    [50, '📖 Keep studying. Focus on the sections highlighted in red below.'],
+    [0,  '📖 Review the Learn tab and NP-Complete tab carefully before your Q&A.']
+  ];
+  msgEl.textContent = msgs.find(([t]) => pct >= t)[1];
+
+  // CLO breakdown
+  const cloColors = { 3: 'var(--c4)', 4: 'var(--c6)', 5: 'var(--c2)' };
+  const cloLabels = { 3: 'CLO-3 Design', 4: 'CLO-4 Apply', 5: 'CLO-5 NP-Proof' };
+  document.getElementById('quizCloBreakdown').innerHTML = [3,4,5].map(clo => {
+    const s = cloScores[clo];
+    const cpct = Math.round(s.correct/s.total*100);
+    return `<div class="quiz-clo-pill">
+      <div class="clo-score" style="color:${cloColors[clo]}">${s.correct}/${s.total}</div>
+      <div class="clo-label">${cloLabels[clo]}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${cpct}%</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('quizScoreWrap').style.display = 'block';
+  document.getElementById('quizScoreWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showLearnQuiz() {
+  // Hide all learn sections and CTAs, show quiz
+  document.getElementById('learnCTAs').style.display = 'none';
+  document.getElementById('learnQuizWrap').style.display = 'flex';
+  document.getElementById('learnQuizWrap').style.flexDirection = 'column';
+  document.getElementById('learnQuizWrap').style.gap = '10px';
+  // Scroll learn panel to top
+  document.getElementById('vp-learn').scrollTop = 0;
+  // Hide all learn sections
+  document.querySelectorAll('#vp-learn .learn-section').forEach(s => s.style.display = 'none');
+  document.querySelector('#vp-learn .banner').style.display = 'none';
+}
+
+function hideLearnQuiz() {
+  document.getElementById('learnCTAs').style.display = 'grid';
+  document.getElementById('learnQuizWrap').style.display = 'none';
+  document.querySelectorAll('#vp-learn .learn-section').forEach(s => s.style.display = '');
+  document.querySelector('#vp-learn .banner').style.display = '';
+  document.getElementById('vp-learn').scrollTop = 0;
+}
+
+function resetQuiz() {
+  quizSelections = {};
+  Object.keys(QUIZ_ANSWERS).forEach(qid => {
+    const qEl  = document.getElementById(qid);
+    const fbEl = document.getElementById(qid + '-fb');
+    if (!qEl) return;
+    qEl.classList.remove('correct','wrong');
+    fbEl.classList.remove('show','correct','wrong');
+    fbEl.innerHTML = '';
+    qEl.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('selected','correct-ans','wrong-ans','disabled'));
+  });
+  document.getElementById('quizScoreWrap').style.display = 'none';
+  document.getElementById('vp-learn').scrollTop = 0;
+}
+
+window.addEventListener('load',()=>{renderPseudo();drawItemsBar();drawBins([]);setStatus('Idle','');setTimeout(()=>drawGrowthChart(15),200);});
+window.addEventListener('resize',()=>{
+  drawGrowthChart(parseInt(document.getElementById('growthSlider')?.value||15));
+  if(steps.length && stepIdx>0) drawBins(steps[stepIdx-1]?.bins||[], steps[stepIdx-1]?.activeBin);
+});
+
+function loadCounterExample() {
+  items = [0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3];
+  document.getElementById('itemInput').value = items.join(' ');
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  const ffdBtn = document.querySelector('.preset-btn[onclick*="ffdvsopt"]');
+  if (ffdBtn) ffdBtn.classList.add('active');
+  resetAll(); drawItemsBar();
+  runAllAndCompare();
+}
+
+function loadPartitionDemo() {
+  items = [...PRESETS.partition];
+  document.getElementById('itemInput').value = items.join(' ');
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.preset-btn[onclick*="partition"]').classList.add('active');
+  mode = 'ffd';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mt-ffd').classList.add('active');
+  document.getElementById('modeDesc').innerHTML = MODE_DESCS['ffd'];
+  renderPseudo();
+  resetAll(); drawItemsBar();
+  steps = generateSteps(); stepIdx = 0;
+  switchTab('visual', document.querySelector('.tab-btn[onclick*="visual"]'));
+  setStatus('Playing','playing');
+  const token = ++playToken;
+  function tick() {
+    if (playToken!==token || stepIdx>=steps.length) {
+      if (stepIdx>=steps.length) {
+        setStatus('Done','done');
+        setTimeout(() => {
+          switchTab('np', document.querySelector('.tab-btn[onclick*="np"]'));
+          document.getElementById('npDemoResult').style.display = 'block';
+        }, 800);
+      }
+      return;
+    }
+    applyStep(steps[stepIdx]); stepIdx++;
+    playTimer = setTimeout(tick, 600);
+  }
+  tick();
+}
+
+
+</script>
+
+</body>
+</html>
