@@ -1,9 +1,6 @@
 # Bin Packing · NP-Completeness · Greedy Algorithms
 
-**Nuha Aburamadan** | BCS 309 Algorithms I — Spring 2026  
-Interactive step-by-step algorithm visualizer built for the final project.
-
-🔗 **[Live Demo]([https://05nuha.github.io/your-repo-name/](https://05nuha.github.io/Bin_Packing_Problem/))**
+🔗 **[Live Demo](https://05nuha.github.io/Bin_Packing_Problem/)**
 
 ---
 
