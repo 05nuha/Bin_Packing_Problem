@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Bin Packing · NP-Completeness · BCS 309</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<title>Bin Packing · NP-Completeness</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Righteous&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 
 /* ═══════════════════════════════════════════
@@ -12,40 +12,40 @@
 ═══════════════════════════════════════════ */
 :root {
   /* Backgrounds */
-  --bg:        #080711;
-  --bg2:       #0f0d1a;
-  --bg3:       #151222;
+  --bg:        #0f0a18;
+  --bg2:       #140d20;
+  --bg3:       #1c1430;
   --panel:     rgba(255,255,255,0.04);
   --panel2:    rgba(255,255,255,0.07);
-  --stroke:    rgba(255,255,255,0.09);
-  --stroke2:   rgba(255,255,255,0.14);
+  --stroke:    rgba(255,255,255,0.10);
+  --stroke2:   rgba(255,255,255,0.15);
 
-  /* Text */
-  --text:      #ede8ff;
-  --muted:     #8b7db0;
+  /* Text — warm off-white, easy on eyes */
+  --text:      #ede9f8;
+  --muted:     #a897c8;
   --faint:     rgba(255,255,255,0.25);
 
-  /* Brand colors */
-  --c1: #a78bfa;   /* violet — primary */
-  --c2: #f472b6;   /* pink — secondary */
-  --c3: #fbbf24;   /* amber — highlight */
-  --c4: #34d399;   /* emerald — success */
-  --c5: #f87171;   /* red — danger/back edge */
-  --c6: #60a5fa;   /* blue — info */
-  --c7: #e879f9;   /* fuchsia — accent */
+  /* Brand colors — desaturated pink/purple, eye-friendly */
+  --c1: #b49ae0;   /* soft lavender */
+  --c2: #e891b8;   /* soft pink */
+  --c3: #f0c97a;   /* soft amber */
+  --c4: #6dcfb0;   /* soft teal-green */
+  --c5: #e88a8a;   /* soft red */
+  --c6: #82b8f0;   /* soft blue */
+  --c7: #d47ee8;   /* soft fuchsia */
 
   /* Item colors for bins */
-  --item1: #a78bfa;
-  --item2: #f472b6;
-  --item3: #34d399;
-  --item4: #fbbf24;
-  --item5: #60a5fa;
-  --item6: #f87171;
-  --item7: #e879f9;
-  --item8: #fb923c;
+  --item1: #b49ae0;
+  --item2: #e891b8;
+  --item3: #6dcfb0;
+  --item4: #f0c97a;
+  --item5: #82b8f0;
+  --item6: #e88a8a;
+  --item7: #d47ee8;
+  --item8: #f0a87a;
 
   /* Fonts */
-  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
@@ -58,10 +58,7 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-body);
-  background: var(--bg);
-  background-image:
-    radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(167,139,250,0.12) 0%, transparent 70%),
-    radial-gradient(ellipse 800px 400px at 85% 90%, rgba(244,114,182,0.08) 0%, transparent 60%);
+  background: radial-gradient(1200px 800px at 20% 0%, #2e0d35 0%, #180a22 40%, #0f0a18 70%, #0a0810 100%);
   color: var(--text);
   min-height: 100vh;
   font-size: 14px;
@@ -73,27 +70,26 @@ body {
 ═══════════════════════════════════════════ */
 .site-header {
   text-align: center;
-  padding: 22px 20px 0;
+  padding: 0;
 }
 
 .site-title {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-  margin-bottom: 4px;
+  font-family: 'Righteous', sans-serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: .5px;
+  text-align: center;
+  margin: 20px 0 4px;
 }
-
-.site-title .t1 { color: var(--c1); }
-.site-title .sep { color: rgba(255,255,255,0.20); margin: 0 8px; }
-.site-title .t2 { color: var(--c2); }
-.site-title .t3 { color: var(--c7); }
+.site-title .w1 { color: #c084fc; }
+.site-title .w2 { color: #f472b6; }
+.site-title .w3 { color: #e879f9; }
+.site-title .dot { color: rgba(244,114,182,0.45); margin: 0 6px; }
 
 .site-sub {
   font-size: 12px;
   color: var(--muted);
-  letter-spacing: 0.03em;
-  margin-bottom: 16px;
+  margin: 0 0 14px;
 }
 
 /* ═══════════════════════════════════════════
@@ -117,11 +113,11 @@ body {
    CARDS
 ═══════════════════════════════════════════ */
 .card {
-  background: linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.022) 100%);
-  border: 1px solid var(--stroke);
-  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.30);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
 .card-header {
@@ -1426,14 +1422,8 @@ body {
 
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header class="site-header">
-  <h1 class="site-title">
-    <span class="t1">Bin Packing</span>
-    <span class="sep">·</span>
-    <span class="t2">NP-Completeness</span>
-    <span class="sep">·</span>
-    <span class="t3">Greedy Algorithms</span>
-  </h1>
-  <p class="site-sub">Nuha Aburamadan &nbsp;|&nbsp; BCS 309 &nbsp;·&nbsp; Interactive Algorithm Visualizer</p>
+  <h1 class="site-title"><span class="w1">Bin Packing</span><span class="dot">·</span><span class="w2">NP-Completeness</span><span class="dot">·</span><span class="w3">Greedy Algorithms</span></h1>
+  <p class="site-sub">Nuha Aburamadan &nbsp;|&nbsp; Interactive Algorithm Visualizer</p>
 </header>
 
 <!-- ═══════════════ MAIN LAYOUT ═══════════════ -->
