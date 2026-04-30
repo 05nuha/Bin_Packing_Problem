@@ -103,6 +103,23 @@ body {
   grid-template-columns: 400px 1fr;
   gap: 14px;
   align-items: start;
+  transition: grid-template-columns 0.3s ease;
+}
+
+.app-wrap.viz-expanded {
+  grid-template-columns: 0px 1fr;
+  gap: 0;
+}
+
+.app-wrap.viz-expanded #leftPanel {
+  overflow: hidden;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
 }
 
 @media (max-width: 1050px) {
@@ -1005,7 +1022,76 @@ body {
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, height 0.3s, width 0.3s;
+}
+
+.viz-expanded .bin-box {
+  width: 100px;
+  height: 280px;
+}
+
+/* Expanded typography for content tabs */
+.viz-expanded .lesson-slide {
+  font-size: 15px;
+  line-height: 2.0;
+  padding: 28px 32px 24px;
+}
+
+.viz-expanded .lesson-slide h4 {
+  font-size: 18px;
+}
+
+.viz-expanded .lesson-slide .worked {
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.viz-expanded .lesson-slide .learn-tip {
+  font-size: 13.5px;
+}
+
+.viz-expanded .lesson-slide code {
+  font-size: 13px;
+}
+
+.viz-expanded .gloss-item {
+  font-size: 13px;
+}
+
+/* NP tab expanded */
+.viz-expanded #vp-np .lesson-slide {
+  font-size: 15px;
+  line-height: 2.0;
+  padding: 28px 32px 24px;
+}
+
+/* Complexity tab expanded */
+.viz-expanded #vp-complexity {
+  font-size: 14.5px;
+  line-height: 1.9;
+  padding: 24px;
+}
+
+.viz-expanded .viz-h3 {
+  font-size: 15px;
+}
+
+.viz-expanded .banner {
+  font-size: 14px;
+  padding: 14px 18px;
+}
+
+.viz-expanded .lesson-nav {
+  padding: 12px 20px;
+}
+
+.viz-expanded .lesson-counter {
+  font-size: 13px;
+}
+
+.viz-expanded .lesson-btn {
+  font-size: 13px;
+  padding: 8px 18px;
 }
 
 .bin-box.active-bin {
@@ -1034,6 +1120,57 @@ body {
 @keyframes slideInItem {
   from { opacity: 0; transform: scaleY(0.6); }
   to   { opacity: 1; transform: scaleY(1); }
+}
+
+/* ═══════════════════════════════════════════
+   LESSON FLOW — ONE SECTION AT A TIME
+═══════════════════════════════════════════ */
+.lesson-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(0,0,0,0.18);
+  border-bottom: 1px solid var(--stroke);
+  flex-shrink: 0;
+  gap: 10px;
+}
+.lesson-progress { display: flex; gap: 5px; align-items: center; }
+.lesson-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  cursor: pointer; transition: all 0.2s;
+}
+.lesson-dot.active { background: var(--c1); transform: scale(1.3); }
+.lesson-dot.done   { background: var(--c4); }
+.lesson-counter { font-size: 11px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.lesson-btn {
+  padding: 6px 14px; border-radius: 8px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.20);
+  color: var(--text); font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: var(--font-body); transition: all 0.15s;
+}
+.lesson-btn:hover { background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.35); }
+.lesson-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.lesson-btn.next { background: rgba(167,139,250,0.20); border-color: rgba(167,139,250,0.40); color: var(--c1); }
+.lesson-slide {
+  display: none; flex-direction: column; gap: 14px;
+  padding: 22px 22px 18px; flex: 1; overflow-y: auto;
+  animation: lessonFade 0.25s ease; font-size: 13.5px; line-height: 1.85; color: var(--muted);
+}
+.lesson-slide.active { display: flex; }
+@keyframes lessonFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lesson-slide p { margin: 0; }
+.lesson-slide b { color: var(--text); }
+.lesson-slide h4 { font-size: 15px; color: var(--text); margin: 4px 0 0; font-weight: 700; }
+.lesson-slide code {
+  background: rgba(0,0,0,0.30); border: 1px solid var(--stroke);
+  border-radius: 5px; padding: 1px 6px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--c1);
 }
 
 .bin-cap-line {
@@ -1436,7 +1573,7 @@ body {
       Controls
     </div>
 
-    <div class="left-body">
+    <div class="left-body" id="leftBody">
 
       <!-- MODE -->
       <div class="sec-label">Algorithm Mode</div>
@@ -1455,7 +1592,7 @@ body {
         </button>
         <button class="mode-btn" id="mt-bf" onclick="setMode('bf',this)">
           Brute Force
-          <small>Exact OPT</small>
+          <small>Exact OPT (n ≤ 12)</small>
         </button>
       </div>
       <div class="mode-desc mb12" id="modeDesc">
@@ -1580,9 +1717,12 @@ body {
 
   <!-- ═══ RIGHT PANEL ═══ -->
   <div class="card" id="rightPanel">
-    <div class="card-header">
-      <div class="icon">📊</div>
-      Interactive Bin Packing Explorer
+    <div class="card-header" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="icon">📊</div>
+        Interactive Bin Packing Explorer
+      </div>
+      <button onclick="toggleVizExpand()" id="vizExpandBtn" style="padding:5px 10px;border-radius:8px;border:1px solid rgba(167,139,250,0.35);background:rgba(167,139,250,0.15);color:var(--c1);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-body);white-space:nowrap">⛶ Expand</button>
     </div>
 
     <!-- TAB BAR -->
@@ -1596,432 +1736,442 @@ body {
 
     <!-- ── LEARN TAB ── -->
     <div class="viz-panel active" id="vp-learn">
-      <div class="banner purple">
-        📖 <b>Start here.</b> This tab teaches you everything from scratch — no prior knowledge needed. Read each section in order, then switch to the Visualizer to watch it live.
+
+      <!-- Lesson nav bar -->
+      <div class="lesson-nav">
+        <button class="lesson-btn" id="lessonPrev" onclick="lessonNav(-1)" disabled>← Back</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+          <div class="lesson-progress" id="lessonDots"></div>
+          <span class="lesson-counter" id="lessonCounter">1 / 9</span>
+        </div>
+        <button class="lesson-btn next" id="lessonNext" onclick="lessonNav(1)">Next →</button>
       </div>
 
-      <!-- SECTION: How to use -->
-      <div class="learn-section">
-        <div class="learn-hdr open" onclick="toggleLearn(this)">
-          <h3>🛠 How to Use This Tool</h3>
-          <span class="chevron">▾</span>
+      <!-- Slide 1: How to use -->
+      <div class="lesson-slide active" id="ls-0">
+        <h4>🛠 How to Use This Tool</h4>
+        <p><b>Left panel</b> controls the algorithm. <b>Right panel</b> visualizes and teaches.</p>
+        <p><b>Step 1:</b> Choose an algorithm from the mode buttons — start with FFD.<br>
+           <b>Step 2:</b> Pick a preset or type your own item sizes (space-separated, 0–1).<br>
+           <b>Step 3:</b> Click <b>Build Steps</b> to generate the full animation.<br>
+           <b>Step 4:</b> Click <b>▶</b> to step through one at a time, or <b>▶▶</b> to play automatically.<br>
+           <b>Step 5:</b> Watch the <b>Step Explanation</b> box — plain English, every step.<br>
+           <b>Step 6:</b> Watch the <b>Pseudocode</b> panel — active line highlights as it runs.</p>
+        <p>The <b>◀</b> button goes backwards. <b>↺</b> resets everything. Speed slider controls animation speed.</p>
+        <p>Tabs: <b>Learn</b> (here) → <b>Visualizer</b> → <b>Compare</b> → <b>NP-Complete</b> → <b>Complexity</b>.</p>
+        <div class="learn-tip"><span class="tip-icon">💡</span><span><b>Best approach:</b> Read all 9 sections here first, then go to the Visualizer and step through the Balanced preset slowly.</span></div>
+        <div class="learn-tip"><span class="tip-icon">⛶</span><span><b>Tip:</b> Click the <b>⛶ Expand</b> button in the top-right of this panel to hide the controls and give the content more space — great for reading the Learn, NP-Complete, and Complexity tabs comfortably.</span></div>
+      </div>
+
+      <!-- Slide 2: What is Bin Packing -->
+      <div class="lesson-slide" id="ls-1">
+        <h4>① What is Bin Packing?</h4>
+        <p>Imagine you are moving house. You have boxes of different sizes and you want to pack everything into the fewest moving trucks possible. Each truck has a fixed capacity. <b>That is Bin Packing.</b></p>
+        <p>Formally: you have <code>n</code> items, each with a size between 0 and 1. Bins each have capacity 1. Your goal — pack all items into the <b>fewest bins possible</b>.</p>
+        <div class="worked">
+          <div>Items: [0.4, 0.6, 0.3, 0.7] &nbsp;|&nbsp; Capacity = 1.0</div>
+          <div>Bin 1: <span class="wb">0.7</span> + <span class="wb">0.3</span> = 1.0 ✓ (perfectly full)</div>
+          <div>Bin 2: <span class="wb">0.6</span> + <span class="wb">0.4</span> = 1.0 ✓ (perfectly full)</div>
+          <div><span class="wg">2 bins — zero waste.</span></div>
         </div>
-        <div class="learn-body open">
-          <p><b>Left panel</b> controls the algorithm. <b>Right panel</b> shows you what's happening.</p>
-          <p>
-            <b>Step 1:</b> Choose an algorithm from the mode buttons — start with FFD.<br>
-            <b>Step 2:</b> Pick a preset graph or type your own item sizes in the box.<br>
-            <b>Step 3:</b> Click <b>Build Steps</b> — this generates the full animation.<br>
-            <b>Step 4:</b> Click <b>▶</b> one step at a time, or <b>▶▶</b> to play automatically.<br>
-            <b>Step 5:</b> Watch the <b>Step Explanation</b> box below — it tells you in plain English exactly what just happened and why.<br>
-            <b>Step 6:</b> Watch the <b>Pseudocode</b> panel — the active line highlights as each step runs.
-          </p>
-          <p>The <b>◀</b> button goes backwards. The <b>↺</b> button resets everything. The speed slider controls how fast the animation plays.</p>
-          <p>The <b>right panel tabs</b> are: Learn (here), Visualizer (animation), Compare (all 4 algorithms side by side), NP-Complete (the proof), Complexity (charts).</p>
-          <div class="learn-tip">
-            <span class="tip-icon">💡</span>
-            <span><b>Best approach:</b> Read sections ①–④ here first. Then click the Visualizer tab, load the Balanced preset, click Build Steps and step through slowly. Come back here if anything is confusing.</span>
+        <p><b>Why is this hard?</b> With 10 items and 4 bins there are 4¹⁰ = over a million possible assignments. With 20 items it is billions. You cannot try every combination — this is why Bin Packing is <b>NP-complete</b>.</p>
+        <div class="learn-tip"><span class="tip-icon">💡</span><span><b>Real uses:</b> Shipping containers, cutting fabric rolls, cloud server allocation, compiler memory allocation.</span></div>
+        <p><b>➜ Try it:</b> Visualizer tab → Balanced preset → Build Steps → watch items fill bins.</p>
+      </div>
+
+      <!-- Slide 3: The Four Algorithms -->
+      <div class="lesson-slide" id="ls-2">
+        <h4>② The Four Algorithms</h4>
+        <p>This tool implements four approaches to Bin Packing — ranging from exact-but-slow to approximate-but-fast.</p>
+        <div class="learn-tip" style="margin-bottom:4px"><span class="tip-icon">📌</span><span><b>What does O() mean?</b> It tells you how fast an algorithm grows as input size n increases. O(n log n) is fast — barely slower than reading the input. O(n²) is moderate — doubles the work when n doubles. O(kⁿ) is exponential — adding one item multiplies the work by k. For n=20 that means billions of operations.</span></div>
+        <div class="worked">
+          <div><b style="color:var(--c5)">Brute Force</b> — tries every possible assignment. Finds the true optimal. Time: O(kⁿ) — exponential. Only practical for n ≤ 8.</div>
+          <div><b style="color:var(--c6)">First-Fit (FF)</b> — for each item in original order, place in the first bin that fits. Open a new bin if nothing fits. Time: O(n²).</div>
+          <div><b style="color:var(--c7)">Best-Fit (BF)</b> — same idea but choose the bin with the least remaining space that still fits. Packs tighter locally. Time: O(n²).</div>
+          <div><b style="color:var(--c4)">First-Fit Decreasing (FFD)</b> — sort items largest-first, then apply First-Fit. The best practical algorithm. Guarantee: ≤ (11/9)·OPT bins. Time: O(n log n).</div>
+        </div>
+        <div class="learn-tip"><span class="tip-icon">💡</span><span>Brute Force is the gold standard — it always finds optimal. But it is too slow for large inputs. FFD is the practical choice: fast and provably close to optimal.</span></div>
+        <p><b>➜ Try it:</b> Compare tab → ⚡ Run All 4 → see all four side by side on the same input.</p>
+      </div>
+
+      <!-- Slide 4: Worked Example -->
+      <div class="lesson-slide" id="ls-3">
+        <h4>③ Worked Example — FFD Step by Step</h4>
+        <p>Items: <code>0.7, 0.5, 0.4, 0.3, 0.2, 0.1</code>. Capacity = 1.0. Already sorted largest-first.</p>
+        <div class="worked">
+          <div><b>Step 1:</b> Item 0.7 — no bins open. Open Bin 1. Place 0.7. Bin 1: [0.7] free: 0.3</div>
+          <div><b>Step 2:</b> Item 0.5 — Bin 1 has 0.3 free, 0.5 does not fit. Open Bin 2. Bin 2: [0.5] free: 0.5</div>
+          <div><b>Step 3:</b> Item 0.4 — Bin 1: 0.3 free (no). Bin 2: 0.5 free (yes!). Place in Bin 2. Bin 2: [0.5, 0.4] free: 0.1</div>
+          <div><b>Step 4:</b> Item 0.3 — Bin 1: 0.3 free (yes!). Place in Bin 1. Bin 1: [0.7, 0.3] free: 0.0 FULL</div>
+          <div><b>Step 5:</b> Item 0.2 — Bin 1 full. Bin 2: 0.1 free (no). Open Bin 3. Bin 3: [0.2] free: 0.8</div>
+          <div><b>Step 6:</b> Item 0.1 — Bin 2: 0.1 free (yes!). Place in Bin 2. Bin 2: [0.5, 0.4, 0.1] free: 0.0 FULL</div>
+          <div><span class="wg">Result: 3 bins. Bin 1 and Bin 2 perfectly full. Bin 3 has 0.8 free.</span></div>
+        </div>
+        <p><b>Key observation:</b> The largest items (0.7, 0.5) went first and claimed space. The smaller items (0.3, 0.1) filled the remaining gaps perfectly. That is the power of sorting first.</p>
+        <p><b>➜ Try it:</b> Visualizer tab → FFD mode → type <code>0.7 0.5 0.4 0.3 0.2 0.1</code> → Build Steps → step through one at a time.</p>
+      </div>
+
+      <!-- Slide 5: Why Sorting Helps + Exchange Argument -->
+      <div class="lesson-slide" id="ls-4">
+        <h4>④ Why Sorting First Makes FFD Better</h4>
+        <p><b>The core insight:</b> Large items are constraints — they are hard to place. Small items are flexible — they can fill any gap. Place constraints first, fill gaps with flexible pieces.</p>
+        <p>Without sorting, small items arrive first and fill bins in awkward ways, leaving gaps that large items cannot fit into. Extra bins open unnecessarily.</p>
+
+        <div class="viz-h3" style="font-size:12px;margin:4px 0 6px">Exchange Argument — Why Sorting is Provably Correct</div>
+
+        <div style="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.22);border-radius:11px;padding:14px;margin-bottom:8px">
+          <div style="font-size:11px;font-weight:700;color:var(--c1);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Lemma — Exchange Argument for FFD</div>
+
+          <p style="font-size:12.5px;color:var(--text);margin-bottom:10px;line-height:1.7"><b>Claim:</b> Let σ be any ordering of items. Let σ' be σ with two adjacent items i and j swapped, where item i is smaller than item j. Then FFD on σ' uses no more bins than FFD on σ.</p>
+
+          <div style="border-left:3px solid var(--c4);padding-left:12px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:700;color:var(--c4);margin-bottom:6px">Base Case — one swap never opens an extra bin</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.75;margin:0">
+              <b style="color:var(--text)">Before swap:</b> Small item i goes first, leaving gap g = 1 − s(i) in its bin. Large item j arrives next.<br><br>
+              <b style="color:var(--text)">Case A — j already fits (s(j) ≤ g):</b> Both orderings place j in the same bin. The swap changes nothing — result is identical (neutral). ✓<br><br>
+              <b style="color:var(--text)">Case B — j doesn't fit (s(j) > g):</b> Before swap, j is forced into a new bin. After swap, j goes first leaving gap g' = 1 − s(j). Since s(i) &lt; s(j), we have s(i) ≤ 1 − s(j) = g'. So i fits in the same bin as j — no new bin needed. The swap saves a bin. ✓<br><br>
+              In both cases, swapping never worsens the result. □
+            </p>
           </div>
+
+          <div style="border-left:3px solid var(--c3);padding-left:12px;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:700;color:var(--c3);margin-bottom:6px">Inductive Step — k swaps, then one more</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.75;margin:0">
+              Assume after k adjacent swaps the first k positions are in decreasing order and the bin count has not increased. The (k+1)th swap corrects one more out-of-order pair — by the base case, this swap does not open a new bin. So after k+1 swaps the result is still no worse. ✓
+            </p>
+          </div>
+
+          <div style="border-left:3px solid var(--c6);padding-left:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--c6);margin-bottom:6px">Termination — reaches sorted order in finite steps</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.75;margin:0">
+              Any ordering of n items has at most n(n−1)/2 pairs that are out of order. Each adjacent swap fixes exactly one pair. After at most n(n−1)/2 swaps the sequence is fully sorted in decreasing order — and the bin count is no worse than any other ordering. □
+            </p>
+          </div>
+        </div>
+        <div style="padding:10px 14px;background:rgba(0,0,0,0.18);border-left:3px solid var(--c1);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:10px">
+          <b style="color:var(--text)">In plain English:</b> Whenever a small item comes before a large item, swapping them never opens an extra bin — the large item claims space first, and the small item always fits in the remaining gap. Since every possible swap is safe, the fully sorted (largest-first) order is provably optimal among all orderings. This is why FFD sorts first.
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start">
+          <!-- Unsorted: 0.4, 0.6, 0.4, 0.6 → FF uses 3 bins -->
+          <div style="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.20);border-radius:11px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--c5);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">✗ Unsorted: 0.4, 0.6, 0.4, 0.6</div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:8px">First-Fit, no sorting:</div>
+            <div style="display:flex;gap:5px;margin-bottom:8px">
+              <div style="flex:1">
+                <div style="height:88px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:7px;display:flex;flex-direction:column-reverse;overflow:hidden">
+                  <div style="height:35px;background:#b49ae0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.4</div>
+                  <div style="height:53px;background:rgba(248,113,113,0.20);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,100,100,0.8);font-weight:700">0.6 gap</div>
+                </div>
+                <div style="font-size:8px;color:var(--muted);text-align:center;margin-top:3px">Bin 1: 0.4 in<br>0.6 gap left — but<br>next 0.6 won't fit!</div>
+              </div>
+              <div style="flex:1">
+                <div style="height:88px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:7px;display:flex;flex-direction:column-reverse;overflow:hidden">
+                  <div style="height:53px;background:#6dcfb0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.6</div>
+                  <div style="height:35px;background:#b49ae0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.4</div>
+                </div>
+                <div style="font-size:8px;color:var(--muted);text-align:center;margin-top:3px">Bin 2: 0.6 opens<br>new bin, then<br>0.4 fills it (full ✓)</div>
+              </div>
+              <div style="flex:1">
+                <div style="height:88px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:7px;display:flex;flex-direction:column-reverse;overflow:hidden">
+                  <div style="height:53px;background:#e891b8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.6</div>
+                  <div style="height:35px;background:rgba(248,113,113,0.20)"></div>
+                </div>
+                <div style="font-size:8px;color:var(--muted);text-align:center;margin-top:3px">Bin 3: last 0.6<br>can't fit in Bin 1<br>(only 0.6 gap ✗)</div>
+              </div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--c5);text-align:center">3 bins used ✗</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding-top:30px">
+            <div style="font-size:18px;color:var(--c3)">⇄</div>
+            <div style="font-size:9px;color:var(--muted);text-align:center">sort first</div>
+          </div>
+
+          <!-- Sorted: 0.6, 0.6, 0.4, 0.4 → FFD uses 2 bins -->
+          <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.20);border-radius:11px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--c4);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">✓ Sorted: 0.6, 0.6, 0.4, 0.4</div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:8px">FFD, sorted largest-first:</div>
+            <div style="display:flex;gap:5px;margin-bottom:8px;justify-content:center">
+              <div style="flex:1;max-width:70px">
+                <div style="height:88px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:7px;display:flex;flex-direction:column-reverse;overflow:hidden">
+                  <div style="height:53px;background:#6dcfb0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.6</div>
+                  <div style="height:35px;background:#b49ae0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.4</div>
+                </div>
+                <div style="font-size:8px;color:var(--muted);text-align:center;margin-top:3px">Bin 1<br>1.0 — full ✓</div>
+              </div>
+              <div style="flex:1;max-width:70px">
+                <div style="height:88px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.10);border-radius:7px;display:flex;flex-direction:column-reverse;overflow:hidden">
+                  <div style="height:53px;background:#e891b8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.6</div>
+                  <div style="height:35px;background:#f0c97a;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(0,0,0,0.7)">0.4</div>
+                </div>
+                <div style="font-size:8px;color:var(--muted);text-align:center;margin-top:3px">Bin 2<br>1.0 — full ✓</div>
+              </div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--c4);text-align:center">2 bins used ✓ — 1 less bin!</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.20);border-radius:9px;font-size:12px;color:var(--muted);line-height:1.65">
+          <b style="color:var(--text)">The exchange argument:</b> Unsorted FF places 0.4 first, leaving a 0.6 gap. When 0.6 arrives it can't fit — forced into a new bin. Sorted FFD places 0.6 first, then 0.4 fits perfectly (0.6 + 0.4 = 1.0). Swapping any smaller-before-larger pair never makes things worse — proving sorted order is always the right greedy choice.
+        </div>
+        <p><b>➜ Try it:</b> Compare tab → Awkward preset → Run All 4. FFD = 4 bins, First-Fit = 6 bins.</p>
+      </div>
+
+      <!-- Slide 6: NP Completeness -->
+      <div class="lesson-slide" id="ls-5">
+        <h4>⑤ NP-Completeness in Plain English</h4>
+        <p><b>P</b> = problems solvable fast (polynomial time). Sorting, shortest path, searching — all in P.</p>
+        <p><b>NP</b> = problems where solutions are <em>checkable</em> fast, even if you cannot <em>find</em> them fast. Bin Packing is in NP — given a proposed packing, you can check it is valid in O(n). But finding the best packing takes exponential time.</p>
+        <p><b>NP-complete</b> = the hardest problems in NP. If you solve one in polynomial time, you solve all of them. Bin Packing, Sudoku, Travelling Salesman, Tetris — all NP-complete.</p>
+        <p><b>What this means:</b> Since Bin Packing is NP-complete, we use <b>approximation algorithms</b> — fast algorithms that are provably close to optimal. FFD is the classic example.</p>
+        <div class="learn-tip"><span class="tip-icon">💡</span><span><b>NP does NOT mean impossible.</b> It means no polynomial-time exact algorithm is known. We can approximate with FFD and solve small instances exactly with Brute Force.</span></div>
+        <p><b>➜ Go deeper:</b> Click the <b>NP-Complete tab</b> for the full rigorous proof.</p>
+      </div>
+
+      <!-- Slide 7: Approximation Ratio -->
+      <div class="lesson-slide" id="ls-6">
+        <h4>⑥ The Approximation Ratio — (11/9)·OPT</h4>
+        <p>Since Bin Packing is NP-complete, we can't solve it exactly in polynomial time. So FFD makes a trade-off — it runs fast but accepts being <em>slightly</em> above optimal. The <b>approximation ratio</b> tells you exactly how far off it can be.</p>
+
+        <p><b>FFD's guarantee:</b> FFD uses at most <code>(11/9)·OPT + 6/9</code> bins.</p>
+        <div class="worked">
+          <div><b>What this means step by step:</b></div>
+          <div>· means multiply. OPT = the true minimum bins any algorithm could use.</div>
+          <div>11/9 = 1.222... so FFD uses at most 1.22 × OPT bins.</div>
+          <div>Example: if OPT = 9 → FFD uses at most (11/9)×9 + 6/9 = 11.67 → <b>at most 11 bins.</b></div>
+          <div>Never more than ~22% above optimal. <b>Always.</b> Guaranteed.</div>
+        </div>
+
+        <div class="learn-tip"><span class="tip-icon">💡</span><span>The approximation ratio is shown live in the stats panel as <b>Bins / OPT</b>. Run any preset and watch it update in real time.</span></div>
+
+        <div class="viz-h3" style="font-size:12px;margin:8px 0 6px">Counterexample — FFD is Not Always Exact</div>
+        <p>FFD is an approximation — close but not always optimal. Here is a concrete case where FFD uses one extra bin:</p>
+        <div class="worked">
+          <div><b>Items:</b> {0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3}</div>
+          <div><b style="color:var(--c5)">FFD sorts → [0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]</b></div>
+          <div style="padding-left:10px">Bin 1: 0.4 in (0.6 left). 0.4 in (0.2 left). Next is 0.4 → 0.4 &gt; 0.2, won't fit!</div>
+          <div style="padding-left:10px">Bin 2: open new. 0.4 in (0.6 left). 0.3 in (0.3 left). 0.3 in (0.0 left). Bin 2 FULL.</div>
+          <div style="padding-left:10px">Bin 3: 0.3 in (0.7 left). 0.3 in (0.4 left). 0.3 in (0.1 left). Bin 3 almost full.</div>
+          <div style="padding-left:10px">Bin 4: last 0.3 → Bin 1 has 0.2 left (0.3 won't fit). Bin 3 has 0.1 left (won't fit). Open Bin 4.</div>
+          <div><b style="color:var(--c5)">FFD result: 4 bins.</b></div>
+          <div><b style="color:var(--c4)">OPT: 3 bins</b> — each bin gets one 0.4 + two 0.3s = 0.4+0.3+0.3 = 1.0. Perfect.</div>
+          <div><b>Guarantee check:</b> 4/3 = 1.33 ≤ (11/9)×3 = 3.67. ✓ Still within guarantee.</div>
+        </div>
+        <p><b>➜ See it live:</b> Compare tab → click <b>⚠ FFD Counterexample</b> button → watch FFD use 4 and Brute Force find 3.</p>
+      </div>
+
+      <!-- Slide 8: Common Mistakes -->
+      <div class="lesson-slide" id="ls-7">
+        <h4>⑦ Common Mistakes — Don't Fall For These</h4>
+        <div class="worked">
+          <div><b style="color:var(--c5)">✗ "FFD always gives the optimal answer."</b><br><span style="color:var(--muted)">Wrong. FFD is an approximation — it guarantees at most (11/9)·OPT but can exceed optimal. Load FFD vs OPT preset to see a counterexample (FFD=4, OPT=3).</span></div>
+          <div><b style="color:var(--c5)">✗ "NP-complete means the problem is impossible."</b><br><span style="color:var(--muted)">Wrong. NP-complete means no polynomial-time exact algorithm is known. We can still approximate (FFD) or solve small instances exactly (Brute Force).</span></div>
+          <div><b style="color:var(--c5)">✗ "Best-Fit is always better than First-Fit."</b><br><span style="color:var(--muted)">Wrong. Both have the same worst-case guarantee (17/10)·OPT. Best-Fit packs tighter locally but neither sorts first — so both can be beaten by FFD.</span></div>
+          <div><b style="color:var(--c5)">✗ "Sorting makes FFD optimal."</b><br><span style="color:var(--muted)">Wrong. Sorting improves FFD significantly but the counterexample shows it can still use more bins than optimal.</span></div>
         </div>
       </div>
 
-      <!-- SECTION: What is Bin Packing -->
-      <div class="learn-section">
-        <div class="learn-hdr open" onclick="toggleLearn(this)">
-          <h3>① What is Bin Packing?</h3>
-          <span class="chevron">▾</span>
+      <!-- Slide 9: Glossary -->
+      <div class="lesson-slide" id="ls-8">
+        <h4>⑧ Quick Reference — Every Term You Need</h4>
+        <p style="font-size:12.5px">You have read all 8 sections. Here is every key term in one place — use this as a cheat sheet before the quiz or Q&A.</p>
+        <div class="gloss-grid">
+          <div class="gloss-item"><b>Bin Packing</b><span>Pack n items (sizes 0–1) into fewest bins (capacity 1). NP-complete.</span></div>
+          <div class="gloss-item"><b>OPT</b><span>The true minimum number of bins. Only Brute Force guarantees it.</span></div>
+          <div class="gloss-item"><b>First-Fit (FF)</b><span>Greedy: scan bins left to right, place in first one that fits. No sorting.</span></div>
+          <div class="gloss-item"><b>FFD</b><span>Sort items largest-first, then apply First-Fit. Best practical algorithm.</span></div>
+          <div class="gloss-item"><b>Best-Fit</b><span>Greedy: place in bin with least remaining space that still fits.</span></div>
+          <div class="gloss-item"><b>Approximation ratio</b><span>How close a heuristic is to OPT. FFD: at most (11/9)·OPT + 6/9.</span></div>
+          <div class="gloss-item"><b>NP</b><span>Problems whose solutions can be verified in polynomial time.</span></div>
+          <div class="gloss-item"><b>NP-complete</b><span>Hardest problems in NP. No polynomial-time exact algorithm is known.</span></div>
+          <div class="gloss-item"><b>Reduction (≤ₚ)</b><span>Transform problem A into problem B in polynomial time, same YES/NO answer. Proves B is at least as hard as A.</span></div>
+          <div class="gloss-item"><b>Greedy algorithm</b><span>Makes the locally best decision at each step without backtracking.</span></div>
+          <div class="gloss-item"><b>Certificate</b><span>A proposed solution. For Bin Packing: which item goes in which bin.</span></div>
+          <div class="gloss-item"><b>Verifier</b><span>Checks a certificate is valid in polynomial time. Ours runs in O(n).</span></div>
+          <div class="gloss-item"><b>Exchange argument</b><span>Proves greedy is correct: swapping any two items in wrong order never improves the result.</span></div>
+          <div class="gloss-item"><b>Counterexample</b><span>A specific input where FFD exceeds OPT. Proves FFD is an approximation, not exact.</span></div>
         </div>
-        <div class="learn-body open">
-          <p>Imagine you're moving house. You have boxes of different sizes and you want to pack everything into the fewest moving trucks possible. Each truck has a fixed capacity. You want to waste as little truck space as possible. <b>That's Bin Packing.</b></p>
-          <p>Formally: you have <code>n</code> items, each with a size between 0 and 1. You have bins, each with capacity 1. Your goal is to pack all items into the <b>fewest bins possible</b>.</p>
-          <p><b>Example:</b> Items = [0.4, 0.6, 0.3, 0.7]. Capacity = 1.0. Can they fit in 2 bins?</p>
-          <div class="worked">
-            <div>Bin 1: <span class="wb">0.7</span> + <span class="wb">0.3</span> = 1.0 ✓ (perfectly full)</div>
-            <div>Bin 2: <span class="wb">0.6</span> + <span class="wb">0.4</span> = 1.0 ✓ (perfectly full)</div>
-            <div><span class="wg">Yes! 2 bins, no waste at all.</span></div>
+
+        <!-- CTA buttons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px" id="learnCTAs">
+          <button class="btn btn-success" style="font-size:13px;padding:13px" onclick="switchTab('visual', document.querySelector('.tab-btn[onclick*=\'visual\']'))">
+            ✓ I understand — show me the animation →
+          </button>
+          <button class="btn" style="font-size:13px;padding:13px;background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.35)" onclick="showLearnQuiz()">
+            🧠 Test my understanding →
+          </button>
+        </div>
+
+        <!-- Quiz -->
+        <div id="learnQuizWrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:14px;font-weight:700;color:var(--text)">🧠 Knowledge Check</div>
+            <button class="btn btn-sec" style="width:auto;padding:7px 14px;font-size:12px" onclick="hideLearnQuiz()">← Back to Learn</button>
           </div>
-          <p><b>Why is this hard?</b> With 10 items and 4 bins there are 4¹⁰ = over a million ways to assign items. With 20 items it's billions. You can't try every combination — it takes exponential time. This is why Bin Packing is <b>NP-complete</b> (explained in the NP-Complete tab).</p>
-          <div class="learn-tip">
-            <span class="tip-icon">💡</span>
-            <span><b>Real life uses:</b> Loading shipping containers (minimize containers), cutting fabric rolls (minimize waste), cloud server allocation (fit workloads into fewest servers), compiler memory allocation.</span>
+          <div class="banner purple" style="font-size:12px">12 questions across all 3 CLOs. Select an answer for each then click Submit.</div>
+
+          <div style="font-size:11px;font-weight:700;color:var(--c6);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+            <span style="padding:2px 10px;border-radius:5px;background:rgba(96,165,250,0.12)">CLO-4 — Algorithm Behaviour</span>
+            <span style="flex:1;height:1px;background:var(--stroke)"></span>
           </div>
-          <p style="margin-top:9px"><b>➜ Try it:</b> Visualizer tab → Balanced preset → Build Steps → watch items pack into bins.</p>
-        </div>
-      </div>
-
-      <!-- SECTION: The Four Algorithms -->
-      <div class="learn-section">
-        <div class="learn-hdr" onclick="toggleLearn(this)">
-          <h3>② The Four Algorithms</h3>
-          <span class="chevron">▾</span>
-        </div>
-        <div class="learn-body">
-          <p><b style="color:var(--c4)">First-Fit Decreasing (FFD) — the recommended approach:</b><br>
-          Sort items from largest to smallest. Then for each item, scan the bins from left to right and place it in the <em>first</em> bin that has enough space. If nothing fits, open a new bin.<br>
-          Why sorting first? Large items are hardest to place. Placing them first lets them claim space cleanly. Small items then fill the leftover gaps perfectly.<br>
-          <b>Guarantee: uses at most (11/9)·OPT + 6/9 bins — never more than ~22% above optimal.</b></p>
-
-          <p style="margin-top:10px"><b style="color:var(--c6)">First-Fit (FF) — simpler but worse:</b><br>
-          Same as FFD but <em>without sorting</em>. Items are placed in their original order. Because large items might arrive late, early small items scatter across bins leaving gaps too small for large items — forcing extra bins to open.</p>
-
-          <p style="margin-top:10px"><b style="color:var(--c7)">Best-Fit (BF) — tightest packing:</b><br>
-          For each item, scan all bins and place it in the bin with the <em>least remaining space that still fits</em>. This leaves larger gaps available for larger items later. Often performs similarly to FFD but without sorting.</p>
-
-          <p style="margin-top:10px"><b style="color:var(--c5)">Brute Force — exact but slow:</b><br>
-          Try every possible way to assign items to bins. Return the assignment that uses the fewest bins. Always finds the true optimal — but exponential time O(kⁿ). Only practical for about 8 items maximum.</p>
-
-          <div class="learn-tip">
-            <span class="tip-icon">💡</span>
-            <span><b>Key insight:</b> Since Bin Packing is NP-complete, we can't solve it exactly in polynomial time. FFD is the practical solution — fast (O(n log n)) and provably close to optimal.</span>
+          <div class="quiz-q" id="q1">
+            <div class="quiz-text">FFD processes items in <b>decreasing</b> order. Given items [0.3, 0.7, 0.5, 0.1], what order does FFD process them in?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q1','a')">A. 0.3, 0.7, 0.5, 0.1 — original order</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q1','b')">B. 0.7, 0.5, 0.3, 0.1 — largest first</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q1','c')">C. 0.1, 0.3, 0.5, 0.7 — smallest first</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q1','d')">D. 0.5, 0.3, 0.7, 0.1 — random order</div>
+            </div>
+            <div class="quiz-feedback" id="q1-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="FFD sorts items in <b>decreasing order</b> before placing them. Largest items first ensures they claim space cleanly before smaller items create awkward gaps."></div>
           </div>
-          <p style="margin-top:9px"><b>➜ Try it:</b> Switch between modes in the left panel and run the same preset. Watch how the bin count changes.</p>
-        </div>
-      </div>
-
-      <!-- SECTION: Worked Example -->
-      <div class="learn-section">
-        <div class="learn-hdr" onclick="toggleLearn(this)">
-          <h3>③ Worked Example — FFD Step by Step</h3>
-          <span class="chevron">▾</span>
-        </div>
-        <div class="learn-body">
-          <p>Items: <code>0.7, 0.5, 0.4, 0.3, 0.2, 0.1</code>. Capacity = 1.0. Already sorted largest-first.</p>
-          <div class="worked">
-            <div><span class="ws">Step 1:</span> Place <span class="wb">0.7</span> → Bin 1 [used: 0.7, free: 0.3]</div>
-            <div><span class="ws">Step 2:</span> Place <span class="wb">0.5</span> → Bin 1 free=0.3 &lt; 0.5 ✗ → open Bin 2 [used: 0.5, free: 0.5]</div>
-            <div><span class="ws">Step 3:</span> Place <span class="wb">0.4</span> → Bin 1 free=0.3 &lt; 0.4 ✗ → Bin 2 free=0.5 ≥ 0.4 ✓ → Bin 2 [used: 0.9]</div>
-            <div><span class="ws">Step 4:</span> Place <span class="wb">0.3</span> → Bin 1 free=0.3 ≥ 0.3 ✓ → Bin 1 [used: 1.0 FULL ✓]</div>
-            <div><span class="ws">Step 5:</span> Place <span class="wb">0.2</span> → Bin 2 free=0.1 &lt; 0.2 ✗ → open Bin 3 [used: 0.2]</div>
-            <div><span class="ws">Step 6:</span> Place <span class="wb">0.1</span> → Bin 2 free=0.1 ≥ 0.1 ✓ → Bin 2 [used: 1.0 FULL ✓]</div>
-            <div><span class="wg">Result: 3 bins. OPT = 3. FFD found the optimal solution! ✓</span></div>
+          <div class="quiz-q" id="q2">
+            <div class="quiz-text">Item size 0.4. Bin 1 has 0.3 remaining, Bin 2 has 0.5 remaining, Bin 3 has 0.4 remaining. Where does <b>First-Fit</b> place it?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q2','a')">A. Bin 1 — it's the first bin</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q2','b')">B. Bin 2 — first bin with enough space</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q2','c')">C. Bin 3 — tightest fit</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q2','d')">D. New Bin 4 — nothing fits</div>
+            </div>
+            <div class="quiz-feedback" id="q2-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="First-Fit scans bins left to right and places in the <b>first bin that fits</b>. Bin 1 only has 0.3 — 0.4 doesn't fit. Bin 2 has 0.5 — 0.4 fits. Place in Bin 2."></div>
           </div>
-          <p>Notice how step 4 placed 0.3 back into Bin 1 filling it perfectly. This only worked because 0.7 was placed first — if 0.3 had gone in first, the gap would've been wrong.</p>
-          <div class="learn-tip">
-            <span class="tip-icon">🎯</span>
-            <span><b>Verify yourself:</b> Visualizer tab → FFD mode → Build Steps → step through slowly. Each step above matches exactly one click.</span>
+          <div class="quiz-q" id="q3">
+            <div class="quiz-text">Brute force finds the optimal solution. Why can't we always use it instead of FFD?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q3','a')">A. Brute force uses too much memory</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q3','b')">B. Brute force only works for small item sizes</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q3','c')">C. Brute force takes exponential time O(kⁿ) — infeasible for large n</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q3','d')">D. Brute force doesn't always find the optimal</div>
+            </div>
+            <div class="quiz-feedback" id="q3-fb"></div>
+            <div class="quiz-answer" data-correct="c" data-explain="Brute force tries every possible assignment — kⁿ combinations. For n=20, k=10 that's 10²⁰ operations. At 10⁹ ops/second that's longer than the age of the universe. FFD runs in O(n log n)."></div>
           </div>
-        </div>
-      </div>
-
-      <!-- SECTION: Why FFD beats FF -->
-      <div class="learn-section">
-        <div class="learn-hdr" onclick="toggleLearn(this)">
-          <h3>④ Why Sorting First Makes FFD Better Than First-Fit</h3>
-          <span class="chevron">▾</span>
-        </div>
-        <div class="learn-body">
-          <p>Consider items: <code>0.51, 0.51, 0.51, 0.49, 0.49, 0.49</code>. Capacity = 1.0. OPT = 3 bins (pair each 0.51 with a 0.49).</p>
-          <p><b style="color:var(--c5)">First-Fit (original order):</b></p>
-          <div class="worked">
-            <div>0.51 → Bin 1. 0.51 → Bin 1 free=0.49? No (0.49&lt;0.51) → Bin 2. 0.51 → Bin 3.</div>
-            <div>0.49 → Bin 1 (0.51+0.49=1.0 ✓). 0.49 → Bin 2. 0.49 → Bin 3.</div>
-            <div><span class="wg">Result: 3 bins ✓ (happens to be optimal here)</span></div>
+          <div class="quiz-q" id="q4">
+            <div class="quiz-text">On the <b>Awkward preset</b> (0.45×4, 0.55×4), FFD uses 4 bins while First-Fit uses 6. Why?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q4','a')">A. FFD tries more combinations</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q4','b')">B. FFD sorts first — each 0.55 pairs with a 0.45 (sum=1.0). First-Fit places 0.45s first, leaving gaps 0.55s can't fill</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q4','c')">C. First-Fit always uses more bins than FFD</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q4','d')">D. The items are too large for First-Fit</div>
+            </div>
+            <div class="quiz-feedback" id="q4-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="FFD sorts: [0.55,0.55,0.55,0.55,0.45,0.45,0.45,0.45]. Each 0.55 pairs with a 0.45 = 1.0. First-Fit processes original order — 0.45s fill bins leaving 0.1 gaps, then 0.55s can't fit and open new bins."></div>
           </div>
-          <p>Now try: <code>0.51, 0.49, 0.51, 0.49, 0.51, 0.49</code> (alternating order):</p>
-          <div class="worked">
-            <div>0.51 → Bin 1. 0.49 → Bin 1 (used: 1.0 FULL). 0.51 → Bin 2.</div>
-            <div>0.49 → Bin 2 (used: 1.0 FULL). 0.51 → Bin 3. 0.49 → Bin 3 (FULL).</div>
-            <div><span class="wg">Result: 3 bins ✓ — also optimal, but only by luck of alternating order.</span></div>
+
+          <div style="font-size:11px;font-weight:700;color:var(--c4);letter-spacing:.06em;text-transform:uppercase;margin:4px 0;display:flex;align-items:center;gap:8px">
+            <span style="padding:2px 10px;border-radius:5px;background:rgba(52,211,153,0.12)">CLO-3 — Algorithm Design & Paradigm</span>
+            <span style="flex:1;height:1px;background:var(--stroke)"></span>
           </div>
-          <p>The problem is First-Fit's result <b>depends on the input order</b>. In the worst case it uses (17/10)·OPT bins. FFD's sort step removes this dependence — no matter what order items arrive in, FFD always processes them largest-first, giving a consistent (11/9)·OPT guarantee.</p>
-          <div class="learn-tip">
-            <span class="tip-icon">💡</span>
-            <span><b>The core insight:</b> Large items are constraints. Small items are flexible. Place constraints first, then fill gaps with flexible pieces. This is the greedy insight behind FFD.</span>
+          <div class="quiz-q" id="q5">
+            <div class="quiz-text">FFD is a <b>greedy algorithm</b>. What makes it greedy?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q5','a')">A. It always finds the globally optimal solution</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q5','b')">B. It makes the locally best decision at each step without backtracking</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q5','c')">C. It uses divide and conquer</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q5','d')">D. It stores all possible solutions and picks the best</div>
+            </div>
+            <div class="quiz-feedback" id="q5-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="A greedy algorithm makes the <b>locally optimal choice at each step</b> without reconsidering past decisions. FFD's greedy choice: place this item in the first bin that fits. It never backtracks."></div>
           </div>
-          <p style="margin-top:9px"><b>➜ Try it:</b> Compare tab → load <b>Awkward</b> preset → run all 4. FFD uses 4 bins, First-Fit and Best-Fit use 6. The 0.55s and 0.45s pair perfectly when sorted — but in original order they each go into separate bins leaving 0.45 gaps that 0.55s can't fit into.</p>
-        </div>
-      </div>
-
-      <!-- SECTION: NP in plain English -->
-      <div class="learn-section">
-        <div class="learn-hdr" onclick="toggleLearn(this)">
-          <h3>⑤ NP-Completeness in Plain English</h3>
-          <span class="chevron">▾</span>
-        </div>
-        <div class="learn-body">
-          <p><b>P</b> = problems solvable fast (polynomial time — like O(n), O(n²)). Sorting, shortest path, searching — all in P.</p>
-          <p><b>NP</b> = problems where solutions are <em>checkable</em> fast even if you can't <em>find</em> them fast. Bin Packing is in NP — if someone gives you a packing, you can check in O(n) whether it's valid. But finding the best packing takes exponential time.</p>
-          <p><b>NP-complete</b> = the hardest problems in NP. They're all secretly connected — if you crack one, you crack all of them. Bin Packing, Sudoku, Travelling Salesman, Tetris (optimal) — all NP-complete.</p>
-          <p><b>What this means for us:</b> Since Bin Packing is NP-complete, we use <b>approximation algorithms</b> — fast algorithms that are provably close to optimal. FFD is the classic example: runs in O(n log n) and guarantees at most (11/9)·OPT bins.</p>
-          <div class="learn-tip">
-            <span class="tip-icon">💡</span>
-            <span><b>NP does NOT mean "impossible."</b> It means no polynomial-time <em>exact</em> algorithm is known. We can still solve small instances exactly (brute force) and large instances approximately (FFD).</span>
+          <div class="quiz-q" id="q6">
+            <div class="quiz-text">Same scenario: Bin 1 has 0.3, Bin 2 has 0.5, Bin 3 has 0.4 remaining. Item size 0.4. Where does <b>Best-Fit</b> place it?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q6','a')">A. Bin 2 — first bin that fits</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q6','b')">B. Bin 3 — tightest fit (exactly 0.4 remaining)</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q6','c')">C. Bin 1 — smallest bin</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q6','d')">D. New Bin 4</div>
+            </div>
+            <div class="quiz-feedback" id="q6-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="Best-Fit places in the bin with the <b>least remaining space that still fits</b>. Bin 3 has exactly 0.4 — a perfect fit, zero waste. Best-Fit chooses Bin 3 over Bin 2's 0.5."></div>
           </div>
-          <p style="margin-top:9px"><b>➜ Go deeper:</b> Switch to the NP-Complete tab for the full proof that Bin Packing is NP-complete.</p>
-        </div>
-      </div>
-
-      <!-- SECTION: Approximation ratio -->
-      <div class="learn-section">
-        <div class="learn-hdr" onclick="toggleLearn(this)">
-          <h3>⑥ The Approximation Ratio — (11/9)·OPT</h3>
-          <span class="chevron">▾</span>
-        </div>
-        <div class="learn-body">
-          <p>The approximation ratio tells you how close a heuristic's answer is to the true optimal.</p>
-          <p>FFD's guarantee: <b>FFD uses at most (11/9)·OPT + 6/9 bins.</b></p>
-          <p>What this means in practice: if the optimal solution uses 9 bins, FFD uses at most 11. That's never more than ~22% above optimal. For large OPT the +6/9 term becomes negligible.</p>
-          <p>This bound is <b>tight</b> — there exist specific inputs where FFD uses exactly 11/9 of optimal. It was proven by Johnson (1973) and confirmed by Simchi-Levi (1994).</p>
-          <p>The approximation ratio is displayed live in the stats panel as <b>Bins Used / OPT</b>. Watch it as you run different presets.</p>
-          <div class="learn-tip">
-            <span class="tip-icon">💡</span>
-            <span><b>Why this matters:</b> The ratio is a <em>mathematical guarantee</em> — not just "usually good" but provably never worse than 22% above optimal, no matter what input you give it.</span>
+          <div class="quiz-q" id="q7">
+            <div class="quiz-text">Why does sorting items in <b>decreasing order</b> improve FFD's result?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q7','a')">A. Smaller items are easier to place so they should go first</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q7','b')">B. Large items placed first leave flexible gaps that small items can fill perfectly</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q7','c')">C. Sorting reduces the number of bins to exactly OPT</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q7','d')">D. Sorting speeds up the algorithm from O(n²) to O(n)</div>
+            </div>
+            <div class="quiz-feedback" id="q7-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="<b>Large items are constraints, small items are flexible.</b> Large items first claim space cleanly. Small items fill remaining gaps. Without sorting, small items scatter leaving gaps too small for large items."></div>
           </div>
-        </div>
-      </div>
-
-      <!-- SECTION: Common mistakes -->
-      <div class="learn-section">
-        <div class="learn-hdr" onclick="toggleLearn(this)">
-          <h3>⑦ Common Mistakes — Don't Fall for These</h3>
-          <span class="chevron">▾</span>
-        </div>
-        <div class="learn-body">
-          <div class="mistake-item">
-            <b>❌ "FFD always gives the optimal solution"</b>
-            <span>Wrong. FFD is an approximation — it guarantees at most (11/9)·OPT bins, but can exceed optimal. It just never exceeds it by more than ~22%.</span>
+          <div class="quiz-q" id="q8">
+            <div class="quiz-text">FFD's guarantee is <b>(11/9)·OPT + 6/9</b>. If OPT = 9 bins, what is the maximum FFD can use?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q8','a')">A. 9 bins — FFD always reaches optimal</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q8','b')">B. 10 bins</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q8','c')">C. 11 bins</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q8','d')">D. 18 bins</div>
+            </div>
+            <div class="quiz-feedback" id="q8-fb"></div>
+            <div class="quiz-answer" data-correct="c" data-explain="(11/9)×9 + 6/9 = 11 + 0.67 = 11.67 → at most <b>11 bins</b>. FFD guarantees never more than (11/9) times optimal — at most ~22% above optimal."></div>
           </div>
-          <div class="mistake-item">
-            <b>❌ "First-Fit and FFD always give the same result"</b>
-            <span>Wrong. FFD almost always uses fewer bins because sorting first lets large items claim space before small items create awkward gaps.</span>
+
+          <div style="font-size:11px;font-weight:700;color:var(--c2);letter-spacing:.06em;text-transform:uppercase;margin:4px 0;display:flex;align-items:center;gap:8px">
+            <span style="padding:2px 10px;border-radius:5px;background:rgba(244,114,182,0.12)">CLO-5 — NP-Completeness Proof</span>
+            <span style="flex:1;height:1px;background:var(--stroke)"></span>
           </div>
-          <div class="mistake-item">
-            <b>❌ "NP-complete means impossible to solve"</b>
-            <span>Wrong. NP-complete means no polynomial-time exact algorithm is known. We can solve small instances with brute force and large instances approximately with FFD.</span>
+          <div class="quiz-q" id="q9">
+            <div class="quiz-text">Bin Packing is in <b>NP</b>. What does this mean?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q9','a')">A. Bin Packing cannot be solved</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q9','b')">B. Bin Packing can be solved in polynomial time</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q9','c')">C. A proposed solution can be verified in polynomial time</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q9','d')">D. Bin Packing requires non-deterministic computation</div>
+            </div>
+            <div class="quiz-feedback" id="q9-fb"></div>
+            <div class="quiz-answer" data-correct="c" data-explain="NP means <b>solutions are verifiable in polynomial time</b>. Given a proposed packing: check every item assigned (O(n)), no bin overflows (O(n)), bins ≤ k (O(n)). Total: O(n)."></div>
           </div>
-          <div class="mistake-item">
-            <b>❌ "Bin Packing is hard because bins are small"</b>
-            <span>Wrong. The hardness comes from the combinatorial explosion of possible assignments — kⁿ combinations for n items and k bins — not the bin size.</span>
+          <div class="quiz-q" id="q10">
+            <div class="quiz-text">In the Partition → Bin Packing reduction, why do we divide each element by T?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q10','a')">A. To make numbers smaller for easier computation</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q10','b')">B. To normalize items into (0,1] so they fit in bins of capacity 1</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q10','c')">C. To ensure the total sum equals exactly 2</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q10','d')">D. To convert Partition into a sorting problem</div>
+            </div>
+            <div class="quiz-feedback" id="q10-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="Dividing by T <b>normalizes</b> each element to (0,1]. After normalization, a subset summing to T becomes items summing to T/T = 1 — exactly one bin's capacity."></div>
           </div>
-          <div class="mistake-item">
-            <b>❌ "Best-Fit is always better than First-Fit"</b>
-            <span>Not always. Best-Fit packs tighter locally but can sometimes create gaps that are hard to fill later. On sorted input (FFD-style) it performs similarly to FFD.</span>
+          <div class="quiz-q" id="q11">
+            <div class="quiz-text">The <b>forward direction</b> of the reduction proof shows:</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q11','a')">A. If Bin Packing = YES then Partition = YES</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q11','b')">B. If Partition = YES then Bin Packing = YES</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q11','c')">C. If Partition = NO then Bin Packing = NO</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q11','d')">D. Partition and Bin Packing always have opposite answers</div>
+            </div>
+            <div class="quiz-feedback" id="q11-fb"></div>
+            <div class="quiz-answer" data-correct="b" data-explain="The <b>forward direction</b>: if S splits into two equal halves (Partition YES), normalized items fit in 2 bins (Bin Packing YES) — each half sums to T/T = 1.0."></div>
           </div>
-        </div>
-      </div>
-
-      <!-- SECTION: Glossary -->
-      <div class="learn-section">
-        <div class="learn-hdr" onclick="toggleLearn(this)">
-          <h3>⑧ Glossary — Every Term Used in This Tool</h3>
-          <span class="chevron">▾</span>
-        </div>
-        <div class="learn-body">
-          <div class="gloss-grid">
-            <div class="gloss-item"><b>Bin capacity</b><span>Maximum total size of items that fit in one bin. Normalized to 1.0 in this tool.</span></div>
-            <div class="gloss-item"><b>Item size</b><span>A number between 0 and 1 representing how much of a bin's capacity the item takes up.</span></div>
-            <div class="gloss-item"><b>OPT</b><span>The optimal (minimum possible) number of bins for a given set of items. The best any algorithm could do.</span></div>
-            <div class="gloss-item"><b>First-Fit (FF)</b><span>Greedy: place each item in the first bin with enough space. No sorting. Simple but less efficient.</span></div>
-            <div class="gloss-item"><b>FFD</b><span>First-Fit Decreasing. Sort items largest-first, then apply First-Fit. Approximation ratio (11/9)·OPT.</span></div>
-            <div class="gloss-item"><b>Best-Fit</b><span>Place each item in the bin with the least remaining space that still fits. Tighter local packing.</span></div>
-            <div class="gloss-item"><b>Brute Force</b><span>Try every possible assignment. Finds exact OPT but takes O(kⁿ) exponential time. Only practical for n≤8.</span></div>
-            <div class="gloss-item"><b>Approximation ratio</b><span>How close a heuristic is to optimal. FFD's ratio is (11/9)·OPT + 6/9 — provably tight.</span></div>
-            <div class="gloss-item"><b>NP-complete</b><span>In NP AND at least as hard as every NP problem. No polynomial-time exact algorithm known.</span></div>
-            <div class="gloss-item"><b>Partition problem</b><span>Can a set of integers be split into two equal-sum subsets? Used as the source problem in the NP-completeness proof.</span></div>
-            <div class="gloss-item"><b>Polynomial reduction</b><span>Transform one problem into another in polynomial time to prove NP-hardness.</span></div>
-            <div class="gloss-item"><b>Waste</b><span>Unused capacity across all bins. Lower waste = better packing. Displayed as average % per bin.</span></div>
-            <div class="gloss-item"><b>Greedy algorithm</b><span>Makes the locally best decision at each step without looking ahead. FFD and First-Fit are both greedy.</span></div>
-            <div class="gloss-item"><b>Certificate</b><span>A proposed solution — in Bin Packing, an assignment of items to bins. Used in the NP membership proof.</span></div>
+          <div class="quiz-q" id="q12">
+            <div class="quiz-text">Why must the reduction from Partition to Bin Packing run in <b>polynomial time</b>?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt" onclick="selectOpt(this,'q12','a')">A. To make the proof easier to understand</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q12','b')">B. Because Partition requires polynomial time to solve</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q12','c')">C. So the hardness transfers — an exponential reduction would hide the difficulty inside itself</div>
+              <div class="quiz-opt" onclick="selectOpt(this,'q12','d')">D. Polynomial time is required by the definition of NP</div>
+            </div>
+            <div class="quiz-feedback" id="q12-fb"></div>
+            <div class="quiz-answer" data-correct="c" data-explain="If the reduction took exponential time, hardness could hide inside it. The reduction must be polynomial so the <b>only</b> hard part is solving Bin Packing. Our reduction does O(n) work."></div>
           </div>
-        </div>
-      </div>
 
-      <!-- CTA buttons -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="learnCTAs">
-        <button class="btn btn-success" style="font-size:13px;padding:13px" onclick="switchTab('visual', document.querySelector('.tab-btn[onclick*=\'visual\']'))">
-          ✓ I understand — show me the animation →
-        </button>
-        <button class="btn" style="font-size:13px;padding:13px;background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.35)" onclick="showLearnQuiz()">
-          🧠 Test my understanding →
-        </button>
-      </div>
+          <button class="btn btn-success" style="font-size:13px;padding:13px" onclick="submitQuiz()">Submit Answers →</button>
 
-      <!-- Quiz content — hidden by default, replaces learn content -->
-      <div id="learnQuizWrap" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <div style="font-size:14px;font-weight:700;color:var(--text)">🧠 Knowledge Check</div>
-          <button class="btn btn-sec" style="width:auto;padding:7px 14px;font-size:12px" onclick="hideLearnQuiz()">← Back to Learn</button>
-        </div>
-        <div class="banner purple" style="font-size:12px">12 questions across all 3 CLOs. Select an answer for each then click Submit. Wrong answers show the correct explanation.</div>
-
-        <!-- CLO-4 -->
-        <div style="font-size:11px;font-weight:700;color:var(--c6);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:8px">
-          <span style="padding:2px 10px;border-radius:5px;background:rgba(96,165,250,0.12)">CLO-4 — Algorithm Behaviour</span>
-          <span style="flex:1;height:1px;background:var(--stroke)"></span>
-        </div>
-
-        <div class="quiz-q" id="q1">
-          <div class="quiz-text">FFD processes items in <b>decreasing</b> order. Given items [0.3, 0.7, 0.5, 0.1], what order does FFD process them in?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q1','a')">A. 0.3, 0.7, 0.5, 0.1 — original order</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q1','b')">B. 0.7, 0.5, 0.3, 0.1 — largest first</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q1','c')">C. 0.1, 0.3, 0.5, 0.7 — smallest first</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q1','d')">D. 0.5, 0.3, 0.7, 0.1 — random order</div>
-          </div>
-          <div class="quiz-feedback" id="q1-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="FFD sorts items in <b>decreasing order</b> before placing them. Largest items first ensures they claim space cleanly before smaller items can create awkward gaps."></div>
-        </div>
-
-        <div class="quiz-q" id="q2">
-          <div class="quiz-text">Item size 0.4 needs placing. Bin 1 has 0.3 remaining, Bin 2 has 0.5 remaining, Bin 3 has 0.4 remaining. Where does <b>First-Fit</b> place it?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q2','a')">A. Bin 1 — it's the first bin</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q2','b')">B. Bin 2 — first bin with enough space</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q2','c')">C. Bin 3 — tightest fit</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q2','d')">D. New Bin 4 — nothing fits</div>
-          </div>
-          <div class="quiz-feedback" id="q2-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="First-Fit scans bins left to right and places the item in the <b>first bin that fits</b>. Bin 1 has only 0.3 remaining — 0.4 doesn't fit. Bin 2 has 0.5 remaining — 0.4 fits. Place in Bin 2."></div>
-        </div>
-
-        <div class="quiz-q" id="q3">
-          <div class="quiz-text">Brute force finds the optimal solution. Why can't we always use it instead of FFD?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q3','a')">A. Brute force uses too much memory</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q3','b')">B. Brute force only works for small item sizes</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q3','c')">C. Brute force takes exponential time O(kⁿ) — infeasible for large n</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q3','d')">D. Brute force doesn't always find the optimal</div>
-          </div>
-          <div class="quiz-feedback" id="q3-fb"></div>
-          <div class="quiz-answer" data-correct="c" data-explain="Brute force tries every possible assignment — kⁿ combinations. For n=20, k=10 that's 10²⁰ operations. At 10⁹ ops/second that's longer than the age of the universe. FFD runs in O(n log n)."></div>
-        </div>
-
-        <div class="quiz-q" id="q4">
-          <div class="quiz-text">On the <b>Awkward preset</b> (items: 0.45×4, 0.55×4), FFD uses 4 bins while First-Fit uses 6. Why?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q4','a')">A. FFD uses fewer bins because it tries more combinations</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q4','b')">B. FFD sorts first — each 0.55 pairs with a 0.45 (sum=1.0). First-Fit places 0.45s first, leaving gaps 0.55s can't fill</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q4','c')">C. First-Fit always uses more bins than FFD</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q4','d')">D. The items are too large for First-Fit to handle</div>
-          </div>
-          <div class="quiz-feedback" id="q4-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="FFD sorts: [0.55,0.55,0.55,0.55,0.45,0.45,0.45,0.45]. Each 0.55 pairs perfectly with a 0.45 = 1.0. First-Fit processes in original order — 0.45s fill bins in pairs (0.9 used, 0.1 left), then 0.55s can't fit anywhere and open new bins."></div>
-        </div>
-
-        <!-- CLO-3 -->
-        <div style="font-size:11px;font-weight:700;color:var(--c4);letter-spacing:.06em;text-transform:uppercase;margin:4px 0;display:flex;align-items:center;gap:8px">
-          <span style="padding:2px 10px;border-radius:5px;background:rgba(52,211,153,0.12)">CLO-3 — Algorithm Design & Paradigm</span>
-          <span style="flex:1;height:1px;background:var(--stroke)"></span>
-        </div>
-
-        <div class="quiz-q" id="q5">
-          <div class="quiz-text">FFD is a <b>greedy algorithm</b>. What makes it greedy?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q5','a')">A. It always finds the globally optimal solution</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q5','b')">B. It makes the locally best decision at each step without backtracking</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q5','c')">C. It uses divide and conquer to split items into halves</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q5','d')">D. It stores all possible solutions and picks the best</div>
-          </div>
-          <div class="quiz-feedback" id="q5-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="A greedy algorithm makes the <b>locally optimal choice at each step</b> without reconsidering past decisions. FFD's greedy choice: 'place this item in the first bin that fits.' It never backtracks or considers alternatives."></div>
-        </div>
-
-        <div class="quiz-q" id="q6">
-          <div class="quiz-text">Same scenario: Bin 1 has 0.3, Bin 2 has 0.5, Bin 3 has 0.4 remaining. Item size 0.4. Where does <b>Best-Fit</b> place it?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q6','a')">A. Bin 2 — first bin that fits</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q6','b')">B. Bin 3 — tightest fit (exactly 0.4 remaining)</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q6','c')">C. Bin 1 — smallest bin</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q6','d')">D. New Bin 4</div>
-          </div>
-          <div class="quiz-feedback" id="q6-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="Best-Fit scans <b>all</b> bins and places in the bin with the <b>least remaining space that still fits</b>. Bin 3 has exactly 0.4 remaining — a perfect fit, zero waste. Best-Fit chooses Bin 3 over Bin 2's 0.5."></div>
-        </div>
-
-        <div class="quiz-q" id="q7">
-          <div class="quiz-text">Why does sorting items in <b>decreasing order</b> improve FFD's result?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q7','a')">A. Smaller items are easier to place so they should go first</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q7','b')">B. Large items placed first leave flexible gaps that small items can fill perfectly</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q7','c')">C. Sorting reduces the number of bins needed to exactly OPT</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q7','d')">D. Sorting speeds up the algorithm from O(n²) to O(n)</div>
-          </div>
-          <div class="quiz-feedback" id="q7-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="<b>Large items are constraints, small items are flexible.</b> Large items first claim space cleanly. Small items fill the remaining gaps. Without sorting, small items scatter across bins leaving gaps too small for large items — forcing extra bins."></div>
-        </div>
-
-        <div class="quiz-q" id="q8">
-          <div class="quiz-text">FFD's approximation guarantee is <b>(11/9)·OPT + 6/9</b>. If OPT = 9 bins, what is the maximum FFD can use?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q8','a')">A. 9 bins — FFD always reaches optimal</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q8','b')">B. 10 bins</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q8','c')">C. 11 bins</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q8','d')">D. 18 bins — double the optimal</div>
-          </div>
-          <div class="quiz-feedback" id="q8-fb"></div>
-          <div class="quiz-answer" data-correct="c" data-explain="(11/9)×9 + 6/9 = 11 + 0.67 = 11.67 → at most <b>11 bins</b>. FFD guarantees never more than (11/9) times optimal. For OPT=9, that's 11 bins maximum — never more than ~22% above optimal."></div>
-        </div>
-
-        <!-- CLO-5 -->
-        <div style="font-size:11px;font-weight:700;color:var(--c2);letter-spacing:.06em;text-transform:uppercase;margin:4px 0;display:flex;align-items:center;gap:8px">
-          <span style="padding:2px 10px;border-radius:5px;background:rgba(244,114,182,0.12)">CLO-5 — NP-Completeness Proof</span>
-          <span style="flex:1;height:1px;background:var(--stroke)"></span>
-        </div>
-
-        <div class="quiz-q" id="q9">
-          <div class="quiz-text">Bin Packing is in <b>NP</b>. What does this mean?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q9','a')">A. Bin Packing cannot be solved — it's impossible</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q9','b')">B. Bin Packing can be solved in polynomial time</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q9','c')">C. A proposed solution (certificate) can be verified in polynomial time</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q9','d')">D. Bin Packing requires non-deterministic computation</div>
-          </div>
-          <div class="quiz-feedback" id="q9-fb"></div>
-          <div class="quiz-answer" data-correct="c" data-explain="NP means <b>solutions are verifiable in polynomial time</b>. Given a proposed packing: check every item assigned (O(n)), no bin overflows (O(n)), bins used ≤ k (O(n)). Total: O(n). Easy to check, hard to find."></div>
-        </div>
-
-        <div class="quiz-q" id="q10">
-          <div class="quiz-text">In the Partition → Bin Packing reduction, we divide each element by T. Why?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q10','a')">A. To make the numbers smaller so they're easier to compute with</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q10','b')">B. To normalize items into (0,1] so they fit in bins of capacity 1</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q10','c')">C. To ensure the total sum equals exactly 2</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q10','d')">D. To convert Partition into a sorting problem</div>
-          </div>
-          <div class="quiz-feedback" id="q10-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="Dividing by T <b>normalizes</b> each element to (0,1] — the required size range for Bin Packing. After normalization, each subset summing to T becomes a subset summing to 1 — exactly one bin's capacity. This makes the two problems equivalent."></div>
-        </div>
-
-        <div class="quiz-q" id="q11">
-          <div class="quiz-text">The <b>forward direction</b> of the reduction proof shows:</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q11','a')">A. If Bin Packing = YES then Partition = YES</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q11','b')">B. If Partition = YES then Bin Packing = YES</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q11','c')">C. If Partition = NO then Bin Packing = NO</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q11','d')">D. Partition and Bin Packing always have opposite answers</div>
-          </div>
-          <div class="quiz-feedback" id="q11-fb"></div>
-          <div class="quiz-answer" data-correct="b" data-explain="The <b>forward direction</b> goes Partition → Bin Packing: if S splits into two equal halves (Partition YES), the normalized items fit in 2 bins (Bin Packing YES) — because each half sums to T/T = 1.0. The backward direction proves the reverse."></div>
-        </div>
-
-        <div class="quiz-q" id="q12">
-          <div class="quiz-text">Why must the reduction from Partition to Bin Packing run in <b>polynomial time</b>?</div>
-          <div class="quiz-opts">
-            <div class="quiz-opt" onclick="selectOpt(this,'q12','a')">A. To make the proof easier to understand</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q12','b')">B. Because Partition requires polynomial time to solve</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q12','c')">C. So the hardness transfers — an exponential reduction would hide the difficulty inside itself</div>
-            <div class="quiz-opt" onclick="selectOpt(this,'q12','d')">D. Polynomial time is required by the definition of NP</div>
-          </div>
-          <div class="quiz-feedback" id="q12-fb"></div>
-          <div class="quiz-answer" data-correct="c" data-explain="If the reduction took exponential time, we could hide hardness inside the reduction — it would be cheating. The reduction must be polynomial so the <b>only</b> hard part is solving Bin Packing. Our reduction does O(n) work: compute T, divide each element."></div>
-        </div>
-
-        <button class="btn btn-success" style="font-size:13px;padding:13px" onclick="submitQuiz()">Submit Answers →</button>
-
-        <!-- Score panel -->
-        <div id="quizScoreWrap" style="display:none">
-          <div style="background:rgba(0,0,0,0.22);border:1px solid var(--stroke);border-radius:14px;padding:18px;text-align:center">
-            <div style="font-size:28px;font-weight:800;font-family:'Outfit',sans-serif;margin-bottom:6px" id="quizScoreNum"></div>
-            <div style="font-size:13px;color:var(--muted);margin-bottom:14px" id="quizScoreMsg"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px" id="quizCloBreakdown"></div>
-            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-              <button class="btn btn-sec" style="width:auto;padding:9px 20px" onclick="resetQuiz()">↺ Try Again</button>
-              <button class="btn btn-success" style="width:auto;padding:9px 20px" onclick="hideLearnQuiz()">← Back to Learn</button>
+          <div id="quizScoreWrap" style="display:none">
+            <div style="background:rgba(0,0,0,0.22);border:1px solid var(--stroke);border-radius:14px;padding:18px;text-align:center">
+              <div style="font-size:28px;font-weight:800;font-family:'Space Grotesk',sans-serif;margin-bottom:6px" id="quizScoreNum"></div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:14px" id="quizScoreMsg"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px" id="quizCloBreakdown"></div>
+              <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <button class="btn btn-sec" style="width:auto;padding:9px 20px" onclick="resetQuiz()">↺ Try Again</button>
+                <button class="btn btn-success" style="width:auto;padding:9px 20px" onclick="hideLearnQuiz()">← Back to Learn</button>
+              </div>
             </div>
           </div>
-        </div>
-
-      </div><!-- /learnQuizWrap -->
+        </div><!-- /learnQuizWrap -->
+      </div>
 
     </div><!-- /vp-learn -->
 
@@ -2153,6 +2303,7 @@ body {
           <div class="info-card">
             <h4>Best-Fit vs FFD</h4>
             <p>Best-Fit packs tighter locally (least wasted space per bin) but doesn't sort first. On sorted input both behave similarly. FFD's sort step gives it a stronger approximation guarantee.</p>
+            <p style="margin-top:6px;font-size:12px;color:var(--muted)"><b style="color:var(--text)">Why Best-Fit doesn't achieve (11/9)·OPT:</b> Best-Fit's greedy choice — always fill the tightest bin — can backfire. Tighter local packing sometimes creates many bins with awkward small gaps that later items can't fill. Without sorting, large items arrive late and find no bin large enough. The exchange argument only proves sorted-decreasing is optimal for First-Fit placement rules — Best-Fit's different placement logic is not covered by the same proof.</p>
           </div>
           <div class="info-card">
             <h4>When Brute Force Matters</h4>
@@ -2164,7 +2315,7 @@ body {
         <div style="background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.22);border-radius:13px;padding:14px">
           <div style="font-size:13px;font-weight:700;color:var(--c5);margin-bottom:8px">⚠ FFD Counterexample — Approximation ≠ Optimal</div>
           <p style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:10px">FFD is a <b style="color:var(--text)">greedy approximation</b> — not always optimal. Load the <b style="color:var(--c1)">FFD vs OPT</b> preset, click ⚡ Run All 4, and watch FFD use <b style="color:var(--c5)">4 bins</b> while Brute Force finds the optimal <b style="color:var(--c4)">3 bins</b>. This proves FFD's guarantee is (11/9)·OPT — provably close but not exact.</p>
-          <button class="btn" style="font-size:12px" onclick="loadCounterExample()">▶ Load FFD vs OPT & Run All 4</button>
+          <button class="btn" style="font-size:12px" onclick="loadCounterExample()">▶ Load FFD vs OPT Preset</button>
         </div>
 
       </div><!-- /compareResults -->
@@ -2172,181 +2323,302 @@ body {
 
     <!-- ── NP TAB ── -->
     <div class="viz-panel" id="vp-np">
-      <div class="banner pink">
-        <b>NP-Completeness Proof</b> — proving Bin Packing is NP-complete in two steps: (1) show it's in NP, (2) reduce from Partition.
+
+      <!-- NP lesson nav -->
+      <div class="lesson-nav">
+        <button class="lesson-btn" id="npPrev" onclick="npNav(-1)" disabled>← Back</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+          <div class="lesson-progress" id="npDots"></div>
+          <span class="lesson-counter" id="npCounter">1 / 8</span>
+        </div>
+        <button class="lesson-btn next" id="npNext" onclick="npNav(1)">Next →</button>
       </div>
 
-      <!-- What NP-complete means -->
-      <div class="learn-section">
-        <div class="learn-hdr open" onclick="toggleLearn(this)">
-          <h3>🧠 What Does NP-Complete Mean?</h3>
-          <span class="chevron">▾</span>
+      <!-- NP Slide 1: What is NP-complete -->
+      <div class="lesson-slide active" id="ns-0">
+        <h4>🧠 What Does NP-Complete Mean?</h4>
+        <p><b>P</b> = problems solvable fast (polynomial time). Sorting, shortest path, searching — all in P.</p>
+        <p><b>NP</b> = problems where a proposed solution can be <em>checked</em> fast, even if it can't be <em>found</em> fast. Bin Packing is in NP — if someone hands you a packing, you can verify it is valid in O(n).</p>
+        <p><b>NP-complete</b> = the hardest problems in NP. They're all secretly connected — solving one fast would solve ALL of NP. Bin Packing, Sudoku, Tetris, Travelling Salesman — all NP-complete.</p>
+        <p>To prove a problem X is NP-complete you need <b>exactly two things:</b></p>
+        <div class="worked">
+          <div>① <b>Show X is in NP</b> — describe a certificate and show it can be verified in polynomial time.</div>
+          <div>② <b>Show X is NP-hard</b> — take a known NP-complete problem and reduce it to X in polynomial time.</div>
         </div>
-        <div class="learn-body open">
-          <p><b>P</b> = problems solvable fast (polynomial time). Sorting, shortest path — all in P.</p>
-          <p><b>NP</b> = problems where a proposed solution can be <em>checked</em> fast, even if it can't be <em>found</em> fast. Bin Packing is in NP — if someone hands you a packing, you can verify it in O(n).</p>
-          <p><b>NP-complete</b> = the hardest problems in NP. They're all secretly connected — if you solve one efficiently, you solve ALL of NP. Bin Packing, Sudoku, Tetris, Travelling Salesman — all NP-complete.</p>
-          <p>To prove a problem X is NP-complete you need exactly two things:</p>
-          <p>① <b>Show X is in NP</b> — describe a certificate and show it can be verified in polynomial time.<br>
-             ② <b>Show X is NP-hard</b> — take a known NP-complete problem and reduce it to X in polynomial time.</p>
-          <div class="learn-tip">
-            <span class="tip-icon">💡</span>
-            <span><b>NP does NOT mean impossible.</b> It means no polynomial-time exact algorithm is known. We can still approximate with FFD — and that's exactly why approximation algorithms matter.</span>
+        <div class="learn-tip"><span class="tip-icon">💡</span><span><b>NP does NOT mean impossible.</b> It means no polynomial-time exact algorithm is known. We can still approximate with FFD — and that's exactly why approximation algorithms matter.</span></div>
+      </div>
+
+      <!-- NP Slide 2: Step 1 - In NP -->
+      <div class="lesson-slide" id="ns-1">
+        <h4>Step 1 — Bin Packing ∈ NP</h4>
+        <p>We need to show that if someone gives us a proposed packing, we can check it quickly.</p>
+        <p><b>The certificate</b> (proposed solution): an assignment of every item to a bin.<br>
+        Example: Item 1 → Bin 2, Item 2 → Bin 1, Item 3 → Bin 1, ...</p>
+        <p><b>The verifier</b> checks four things, all in O(n):</p>
+        <div class="worked">
+          <div><b>① Every item assigned:</b> scan the certificate, confirm every item has exactly one bin label. Cost: O(n).<br><span style="color:var(--muted);font-size:11.5px">→ Makes sure nothing was left out and nothing was put in two bins at once.</span></div>
+          <div><b>② No bin exceeds capacity:</b> for each bin, add up the sizes of all items assigned to it, check the total is ≤ 1. Cost: O(n).<br><span style="color:var(--muted);font-size:11.5px">→ Capacity = 1. If any bin's items add up to more than 1, the packing is invalid.</span></div>
+          <div><b>③ All item sizes valid:</b> confirm every item size sᵢ is a number strictly between 0 and 1. Cost: O(n).<br><span style="color:var(--muted);font-size:11.5px">→ sᵢ is just the size of item i — for example 0.4 or 0.7. The problem requires sizes in (0,1] so we check no item is 0 or larger than 1.</span></div>
+          <div><b>④ Total bins used ≤ k:</b> count how many distinct bin numbers appear in the certificate, verify that count is ≤ k. Cost: O(n).<br><span style="color:var(--muted);font-size:11.5px">→ k is the bin limit we were given as input. If the packing uses 5 bins but k=3, it fails.</span></div>
+          <div><b>Total verification cost: O(n) — polynomial. ✓</b></div>
+        </div>
+        <p>The verifier never tries to <em>find</em> a good packing — it only <em>checks</em> the given one. <b>Finding is hard. Checking is easy. That's NP.</b></p>
+        <div class="learn-tip"><span class="tip-icon">💡</span><span>Think of Sudoku — finding the solution is hard, but checking someone else's solution takes seconds. Same idea here.</span></div>
+      </div>
+
+      <!-- NP Slide 3: Step 2 - Reduction -->
+      <div class="lesson-slide" id="ns-2">
+        <h4>Step 2 — Reduce from Partition</h4>
+        <p><b>What does "reduce" mean?</b> We transform Partition — already known NP-complete — into Bin Packing, preserving the YES/NO answer. We write: <b>Partition ≤ₚ Bin Packing</b>.</p>
+        <p>The <b>≤ₚ symbol</b> means "reduces to in polynomial time" — if you could solve Bin Packing fast, you could solve Partition fast too. Since Partition is hard, Bin Packing must be at least as hard.</p>
+
+        <!-- Why Partition specifically -->
+        <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.22);border-radius:11px;padding:13px;margin:8px 0">
+          <div style="font-size:11px;font-weight:700;color:var(--c3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px">⚠ Why Partition? Why not another NP-complete problem?</div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.75;margin:0">
+            NP-completeness proofs form a <b style="color:var(--text)">chain</b> — each proof builds on something already established independently:
+          </p>
+          <div style="font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin:10px 0;line-height:2.0;padding-left:8px">
+            <div>Cook (1971) — proved <b style="color:var(--c4)">3-SAT</b> NP-complete from scratch (the foundation)</div>
+            <div style="padding-left:16px">↓ reduced from 3-SAT</div>
+            <div>Karp (1972) — proved <b style="color:var(--c6)">Partition</b> NP-complete</div>
+            <div style="padding-left:16px">↓ reduced from Partition  ← <b style="color:var(--c2)">we are here</b></div>
+            <div>Us — proving <b style="color:var(--c2)">Bin Packing</b> NP-complete</div>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.75;margin:0">
+            We can only reduce <b style="color:var(--text)">FROM</b> a problem already proved NP-complete before ours. Partition was proved in 1972 — independently, before Bin Packing. So we can stand on it as a given fact and cite Karp 1972 without reproving it.<br><br>
+            We cannot use Bin Packing to prove Partition — that would be circular: "Partition is hard because Bin Packing is hard... and Bin Packing is hard because Partition is hard." Each link in the chain must point downward only.
+          </p>
+        </div>
+
+        <p><b>The Partition problem:</b> Given S = {a₁,…,aₙ} with total sum 2T, can S be split into two subsets each summing to T?</p>
+        <p><b>Example:</b> S = {3,3,2,2}, total=10, T=5. Split into {3,2} and {3,2} — both sum to 5. YES.</p>
+        <p style="margin-top:6px"><b>The construction (f):</b></p>
+        <div class="worked">
+          <div>① Compute T = (Σaᵢ)/2 — half the total sum.</div>
+          <div>② Normalize: sᵢ = aᵢ/T for each element. Now every sᵢ ∈ (0,1].</div>
+          <div>③ Set k = 2 bins of capacity 1.</div>
+          <div>④ Ask: do all normalized items fit in 2 bins?</div>
+        </div>
+        <p><b>This runs in O(n)</b> — one division per element. Polynomial. ✓</p>
+        <div class="worked">
+          <div><span class="ws">Input:</span> S = {3,3,2,2} &nbsp; T = 5</div>
+          <div><span class="ws">Normalize:</span> 3/5=<span class="wb">0.6</span> &nbsp; 3/5=<span class="wb">0.6</span> &nbsp; 2/5=<span class="wb">0.4</span> &nbsp; 2/5=<span class="wb">0.4</span></div>
+          <div><span class="ws">Bin Packing:</span> items={0.6,0.6,0.4,0.4}, k=2, capacity=1</div>
+        </div>
+
+        <div style="background:rgba(96,165,250,0.06);border:1px solid rgba(96,165,250,0.22);border-radius:11px;padding:13px;margin-top:8px">
+          <div style="font-size:11px;font-weight:700;color:var(--c6);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">💡 Why do we need BOTH directions?</div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.75;margin:0">
+            The reduction only works if Partition and Bin Packing have the <b style="color:var(--text)">exact same YES/NO answer</b> on corresponding inputs. One direction alone is not enough:
+          </p>
+          <div class="worked" style="margin-top:8px">
+            <div><b style="color:var(--c5)">Forward alone (Partition YES → Bin Packing YES):</b> Only proves that if Partition has a solution, so does Bin Packing. But what if Bin Packing says YES on inputs where Partition says NO? Then they're not truly equivalent — Bin Packing could be easier than Partition. Hardness doesn't transfer.</div>
+            <div><b style="color:var(--c5)">Backward alone (Bin Packing YES → Partition YES):</b> Only proves that any Bin Packing solution gives a Partition solution. But what if Partition has a solution that doesn't correspond to any valid packing? Then the translation misses cases.</div>
+            <div><b style="color:var(--c4)">Both together:</b> Partition = YES ⟺ Bin Packing = YES. The two problems are completely equivalent — same answer, always. This means Bin Packing is at least as hard as Partition. Since Partition is NP-complete and Bin Packing ∈ NP, Bin Packing is NP-complete.</div>
+          </div>
+        </div>
+
+        <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.25);border-radius:11px;padding:13px;margin-top:8px">
+          <div style="font-size:11px;font-weight:700;color:var(--c3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px">Theorem — Correctness of the Reduction</div>
+          <p style="font-family:var(--font-mono);font-size:12px;line-height:1.9;color:var(--text);margin:0">
+            x ∈ Partition &nbsp;⟺&nbsp; f(x) ∈ Bin Packing<br><br>
+            <b>Proof:</b> By Lemma 1 (forward direction, next slide) and Lemma 2 (backward direction, slide after).<br>
+            f runs in O(n) — one division per element. Therefore Partition ≤ₚ Bin Packing.<br>
+            Since Partition is NP-complete and Bin Packing ∈ NP, Bin Packing is NP-complete. □
+          </p>
+          <p style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:0">
+            x ∈ Partition = "x is a YES instance of Partition" &nbsp;|&nbsp;
+            f(x) ∈ Bin Packing = "the translated instance is also YES" &nbsp;|&nbsp;
+            ⟺ = "if and only if" — both directions must hold
+          </p>
+        </div>
+      </div>
+
+      <!-- NP Slide 4: Edge Cases -->
+      <div class="lesson-slide" id="ns-3">
+        <h4>Edge Cases — The Proof Handles All Inputs</h4>
+        <p>A rigorous proof must work on all valid inputs, not just typical ones.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:rgba(0,0,0,0.20);border:1px solid var(--stroke);border-radius:10px;padding:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--c1);margin-bottom:6px">Item of size exactly 1</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.65;margin:0">Must go in its own bin. Verifier correctly flags any bin where sharing would push total above 1. Proof holds unchanged.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.20);border:1px solid var(--stroke);border-radius:10px;padding:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--c1);margin-bottom:6px">Single item (n=1)</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.65;margin:0">Trivially fits in 1 bin. But n=1 is not a valid Partition instance — you need at least 2 elements with sum=2T, T>0. Reduction is not applied.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.20);border:1px solid var(--stroke);border-radius:10px;padding:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--c1);margin-bottom:6px">All items identical size</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.65;margin:0">Sorting has no effect. FFD still packs ⌊1/s⌋ items per bin correctly. Verifier checks each bin ≤ 1. No special case needed.</p>
+          </div>
+          <div style="background:rgba(0,0,0,0.20);border:1px solid var(--stroke);border-radius:10px;padding:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--c1);margin-bottom:6px">Items summing to exactly 2T</div>
+            <p style="font-size:12px;color:var(--muted);line-height:1.65;margin:0">Required for Partition. T = (Σaᵢ)/2 > 0 always. Division by T always valid. After normalization Σsᵢ = 2 exactly — backward direction holds unchanged.</p>
           </div>
         </div>
       </div>
 
-      <!-- Step 1: In NP -->
-      <div class="proof-step">
-        <div class="proof-step-hdr">
-          <span class="proof-badge">Step 1</span>
-          <h4>Bin Packing ∈ NP — It Can Be Verified Fast</h4>
+      <!-- NP Slide 5: Forward Direction -->
+      <div class="lesson-slide" id="ns-4">
+        <h4>Step 3 — Forward Direction (Partition YES → Bin Packing YES)</h4>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:4px"><b style="color:var(--text)">Recall:</b> T = half the total sum of S (i.e. T = Σaᵢ / 2). Each normalized item has size sᵢ = aᵢ/T.</p>
+
+        <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.20);border-radius:11px;padding:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--c4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Lemma 1 — Forward Direction</div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:6px">If ∃ A ⊆ S such that Σ<sub>i∈A</sub> aᵢ = T and Σ<sub>i∈B</sub> aᵢ = T where B = S\A,</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">
+            ∃ A ⊆ S = "there exists a subset A of S" — A is one of the two groups in our partition<br>
+            Σ<sub>i∈A</sub> aᵢ = T = "the items in group A add up to T" — meaning A is one valid half<br>
+            B = S\A = "B is everything in S that isn't in A" — the other half
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:6px">then f(⟨S,T⟩) has a valid packing into k = 2 bins.</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:10px;line-height:1.7">
+            f(⟨S,T⟩) = the Bin Packing instance we constructed from the Partition input<br>
+            k = 2 = we only need 2 bins (one per group)
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px"><b>Proof:</b></div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">Let sᵢ = aᵢ/T for all i.</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">sᵢ = the normalized size of item i (original size divided by T so it fits between 0 and 1)</div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">Σ<sub>i∈A</sub> sᵢ = (1/T) · Σ<sub>i∈A</sub> aᵢ = T/T = 1 ≤ capacity.</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">
+            "Sum of all normalized sizes in group A" = (1/T) × "sum of original sizes in A" = (1/T) × T = 1<br>
+            Since 1 ≤ 1 (capacity), group A fits perfectly in Bin 1 with no overflow.
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">Σ<sub>i∈B</sub> sᵢ = T/T = 1 ≤ capacity.</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">Same argument for group B — it also sums to exactly 1 and fits in Bin 2.</div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">Assign A → Bin 1, B → Bin 2. ∴ Bin Packing = YES. □</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;line-height:1.7">∴ means "therefore". □ marks the end of the proof.</div>
         </div>
-        <p><b>The certificate</b> (proposed solution): an assignment of every item to a bin. For example: Item 1 → Bin 2, Item 2 → Bin 1, Item 3 → Bin 1, ...</p>
-        <p><b>The verifier</b> checks four things, all in polynomial time:</p>
-        <p>
-          <b>① Every item assigned:</b> scan the certificate, confirm every item has exactly one bin label. Cost: <code>O(n)</code>.<br>
-          <b>② No bin exceeds capacity:</b> for each bin, sum the sizes of all assigned items, verify total ≤ 1. Cost: <code>O(n)</code>.<br>
-          <b>③ All sizes valid:</b> confirm every item size sᵢ ∈ (0,1]. Cost: <code>O(n)</code>.<br>
-          <b>④ Bins used ≤ k:</b> count distinct bin labels, verify count ≤ k. Cost: <code>O(n)</code>.
-        </p>
-        <p><b>Total verification cost: O(n) — polynomial. ✓</b></p>
-        <p>The verifier never tries to <em>find</em> a good packing — it only <em>checks</em> that the given one is valid. Finding is hard. Checking is easy. That's NP.</p>
-      </div>
-
-      <!-- Step 2: Reduction -->
-      <div class="proof-step">
-        <div class="proof-step-hdr">
-          <span class="proof-badge">Step 2</span>
-          <h4>NP-Hard — Reduce from Partition</h4>
+        <div style="margin-top:8px;padding:10px 14px;background:rgba(0,0,0,0.18);border-left:3px solid var(--c4);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--muted);line-height:1.7">
+          <b style="color:var(--text)">In plain English:</b> We designed the reduction so that T divides perfectly into 1. Any group that summed to T in the original problem now sums to T÷T = 1 — and 1 is exactly one bin. So we just drop each group straight into its own bin. The partition we already had becomes the packing automatically — no extra work needed.
         </div>
-        <p><b>The Partition problem (known NP-complete):</b> Given a set S = {a₁, a₂, …, aₙ} of positive integers with total sum 2T, can S be split into two subsets each summing to exactly T?</p>
-        <p><b>In plain English:</b> You have a list of numbers. Their total is even. Can you split them into two groups with equal sums?<br>
-        <b>Example:</b> S = {3, 3, 2, 2}, total = 10, T = 5. Split into {3,2} and {3,2} — both sum to 5. YES.</p>
-
-        <p style="margin-top:10px"><b>The construction — how we disguise Partition as Bin Packing:</b></p>
-        <p><b>In plain English:</b> Shrink all numbers so they fit between 0 and 1 (divide by T). Then ask if they fit in 2 bins of size 1. That's it.</p>
-        <p><b>Formally:</b><br>
-        ① Compute <code>T = (Σ aᵢ) / 2</code> — half the total sum.<br>
-        ② Normalize: create item sizes <code>sᵢ = aᵢ / T</code> for each aᵢ ∈ S. Now every sᵢ ∈ (0, 1].<br>
-        ③ Set <code>k = 2</code> bins of capacity 1.<br>
-        ④ Ask: can all n normalized items fit in 2 bins?</p>
-        <p><b>This construction runs in O(n)</b> — just one division per element. Polynomial. ✓</p>
-
-        <div class="worked">
-          <div><span class="ws">Input:</span> S = {3, 3, 2, 2} &nbsp; sum = 10 &nbsp; T = 10/2 = 5</div>
-          <div><span class="ws">Normalize (÷T):</span> 3/5=<span class="wb">0.6</span> &nbsp; 3/5=<span class="wb">0.6</span> &nbsp; 2/5=<span class="wb">0.4</span> &nbsp; 2/5=<span class="wb">0.4</span></div>
-          <div><span class="ws">Bin Packing:</span> items={0.6, 0.6, 0.4, 0.4}, k=2, capacity=1</div>
-        </div>
-      </div>
-
-      <!-- Step 3: Forward -->
-      <div class="proof-step">
-        <div class="proof-step-hdr">
-          <span class="proof-badge">Step 3</span>
-          <h4>Correctness — Forward Direction (Partition YES → Bin Packing YES)</h4>
-        </div>
-        <p><b>In plain English:</b> If the numbers can be split into two equal groups, then the shrunk versions fit perfectly into 2 bins — because each group adds up to exactly 1.0 after dividing by T.</p>
-        <p><b>Formally:</b><br>
-        Assume Partition = YES. So ∃ subset A ⊆ S where <code>Σ(aᵢ for i∈A) = T</code> and B = S\A where <code>Σ(aᵢ for i∈B) = T</code>.</p>
-        <p>After normalizing:<br>
-        <code>Σ(sᵢ for i∈A) = Σ(aᵢ/T for i∈A) = (1/T) · Σ(aᵢ for i∈A) = T/T = <b>1</b></code><br>
-        <code>Σ(sᵢ for i∈B) = T/T = <b>1</b></code></p>
-        <p>Place all items from A into Bin 1 → total = 1.0 ≤ capacity 1. ✓<br>
-        Place all items from B into Bin 2 → total = 1.0 ≤ capacity 1. ✓<br>
-        All n items packed in k = 2 bins. <b>Bin Packing = YES. ✓</b></p>
-
-        <div class="worked">
-          <div><span class="ws">A={3,2}=5=T</span> → after ÷T: {0.6,0.4} → <span class="wg">Bin1: 0.6+0.4=1.0 ✓</span></div>
-          <div><span class="ws">B={3,2}=5=T</span> → after ÷T: {0.6,0.4} → <span class="wg">Bin2: 0.6+0.4=1.0 ✓</span></div>
+        <div class="worked" style="margin-top:8px">
+          <div><span class="ws">A={3,2}, Σ=5=T</span> → sᵢ = {3/5, 2/5} = {0.6, 0.4} → Σ = 1.0 → <span class="wg">Bin 1 ✓</span></div>
+          <div><span class="ws">B={3,2}, Σ=5=T</span> → sᵢ = {3/5, 2/5} = {0.6, 0.4} → Σ = 1.0 → <span class="wg">Bin 2 ✓</span></div>
         </div>
       </div>
 
-      <!-- Step 4: Backward -->
-      <div class="proof-step">
-        <div class="proof-step-hdr">
-          <span class="proof-badge">Step 4</span>
-          <h4>Correctness — Backward Direction (Bin Packing YES → Partition YES)</h4>
-        </div>
-        <p><b>In plain English:</b> If the items fit in 2 bins, both bins must be exactly full (because the total of all items is exactly 2.0, and two bins each holding at most 1.0 can only both reach 1.0 if they're both exactly full). Multiply back by T to get the partition.</p>
-        <p><b>Formally:</b><br>
-        Assume Bin Packing = YES. Let A = items in Bin 1, B = items in Bin 2.</p>
-        <p>By capacity constraint:<br>
-        <code>Σ(sᵢ for i∈A) ≤ 1</code> &nbsp; and &nbsp; <code>Σ(sᵢ for i∈B) ≤ 1</code></p>
-        <p>Total of all normalized items:<br>
-        <code>Σ all sᵢ = Σ(aᵢ/T) = (1/T) · 2T = <b>2</b></code></p>
-        <p>Since both sums are ≤ 1 and must total exactly 2, each must equal exactly 1:<br>
-        <code>Σ(sᵢ for i∈A) = 1</code> &nbsp; and &nbsp; <code>Σ(sᵢ for i∈B) = 1</code></p>
-        <p>Denormalize (multiply by T):<br>
-        <code>Σ(aᵢ for i∈A) = 1 × T = T</code> &nbsp; ✓<br>
-        <code>Σ(aᵢ for i∈B) = 1 × T = T</code> &nbsp; ✓</p>
-        <p>Two subsets of S each summing to T. <b>Partition = YES. ✓</b></p>
+      <!-- NP Slide 6: Backward Direction -->
+      <div class="lesson-slide" id="ns-5">
+        <h4>Step 4 — Backward Direction (Bin Packing YES → Partition YES)</h4>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:4px"><b style="color:var(--text)">Recall:</b> T = half the total sum of S. All normalized items sᵢ = aᵢ/T, so Σ all sᵢ = (1/T)·2T = 2. The two bins each have capacity 1.</p>
 
-        <div class="worked">
-          <div><span class="ws">Bin1=[0.6+0.4=1.0]</span> × T=5 → <span class="wg">Group1 sum = 5 = T ✓</span></div>
-          <div><span class="ws">Bin2=[0.6+0.4=1.0]</span> × T=5 → <span class="wg">Group2 sum = 5 = T ✓</span></div>
-          <div><span class="wg">→ Partition = YES ✓</span></div>
-        </div>
+        <div style="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.22);border-radius:11px;padding:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--c1);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Lemma 2 — Backward Direction</div>
 
-        <p style="margin-top:10px"><b>Formal Conclusion:</b> Partition is NP-complete (Karp, 1972). We constructed a polynomial-time reduction Partition ≤ₚ Bin Packing in O(n) time, with the same YES/NO answer. Since Partition is NP-complete and Bin Packing ∈ NP (Step 1), <b>Bin Packing is NP-complete. ∎</b></p>
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">If f(⟨S,T⟩) has a valid packing into k = 2 bins,</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">
+            f(⟨S,T⟩) = the Bin Packing instance we built from the Partition input S and T<br>
+            k = 2 = we are told the packing uses at most 2 bins
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">then ∃ A ⊆ S such that Σ<sub>i∈A</sub> aᵢ = T and Σ<sub>i∈S\A</sub> aᵢ = T.</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:10px;line-height:1.7">
+            ∃ A ⊆ S = "there exists a subset A of S" — meaning we can find a valid split<br>
+            Σ<sub>i∈A</sub> aᵢ = T = "items in group A sum to T" — one equal half<br>
+            S\A = "everything in S not in A" — the other half also sums to T
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px"><b>Proof:</b> Let A = items in Bin 1, B = items in Bin 2.</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">Since the packing is valid, every item is assigned to exactly one bin — no item appears in both bins and no item is left out. So {A, B} partitions all n items.</div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">(i) Σ<sub>i∈A</sub> sᵢ ≤ 1 &nbsp; and &nbsp; (ii) Σ<sub>i∈B</sub> sᵢ ≤ 1</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">
+            sᵢ = normalized size of item i (= aᵢ/T)<br>
+            This just says neither bin overflows — each bin holds at most 1 (its capacity).
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">Σ<sub>i∈A</sub> sᵢ + Σ<sub>i∈B</sub> sᵢ = Σ<sub>all</sub> sᵢ = (1/T)·2T = 2</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">
+            All items together (Bin 1 + Bin 2) = all items total.<br>
+            Total of all normalized sizes = (1/T) × total of original sizes = (1/T) × 2T = 2.<br>
+            So the two bins together must hold exactly 2.
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">∴ Σ<sub>i∈A</sub> sᵢ = 1 &nbsp; and &nbsp; Σ<sub>i∈B</sub> sᵢ = 1 &nbsp; (uniquely determined)</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;margin-bottom:8px;line-height:1.7">
+            Two numbers each ≤ 1 that add up to exactly 2 — both must equal exactly 1. No other possibility.<br>
+            So both bins are forced to be exactly full.
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--text);margin-bottom:4px">Denormalizing: Σ<sub>i∈A</sub> aᵢ = T·1 = T &nbsp; and &nbsp; Σ<sub>i∈B</sub> aᵢ = T·1 = T. □</div>
+          <div style="font-size:11px;color:var(--muted);padding-left:12px;line-height:1.7">
+            Denormalizing = multiply each sᵢ back by T to get original sizes aᵢ.<br>
+            Each bin's original items sum to T × 1 = T. Two groups each summing to T = a valid partition.
+          </div>
+        </div>
+        <div style="margin-top:8px;padding:10px 14px;background:rgba(0,0,0,0.18);border-left:3px solid var(--c1);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--muted);line-height:1.7">
+          <b style="color:var(--text)">In plain English:</b> After normalizing, all items together sum to exactly 2. We have 2 bins each capped at 1. The only way two numbers that are each ≤ 1 can add up to exactly 2 is if both equal exactly 1 — there is no other possibility. So both bins must be exactly full. Now multiply everything back by T and each bin's items sum to T. That's your two equal groups — the partition falls out automatically from any valid packing.
+        </div>
+        <div style="margin-top:8px;padding:10px 14px;background:rgba(248,113,113,0.06);border-left:3px solid var(--c5);border-radius:0 8px 8px 0;font-size:12px;color:var(--muted);line-height:1.65">
+          <b style="color:var(--text)">Why this direction is harder:</b> In the forward direction we built the packing ourselves using the partition we already had. Here we go the other way — we are handed some packing that works, with no idea how it was found, and we need to extract a partition from it. The proof works because the math is so tight that <em>any</em> valid 2-bin packing is automatically a valid partition in disguise — there is no room for a packing that fits the bins but doesn't correspond to a partition.
+        </div>
+        <div class="worked" style="margin-top:8px">
+          <div><span class="ws">Bin1=[0.6+0.4]=1.0</span> × T=5 → <span class="wg">Σ aᵢ = 5 = T ✓</span></div>
+          <div><span class="ws">Bin2=[0.6+0.4]=1.0</span> × T=5 → <span class="wg">Σ aᵢ = 5 = T ✓</span></div>
+          <div><span class="wg">Partition = YES ∎</span></div>
+        </div>
+        <p style="margin-top:10px"><b>Conclusion:</b> Partition is NP-complete (Karp, 1972). Lemma 1 + Lemma 2 prove the iff: Partition = YES ⟺ Bin Packing = YES. Since Partition ≤ₚ Bin Packing in O(n) and Bin Packing ∈ NP, <b>Bin Packing is NP-complete. ∎</b></p>
       </div>
 
-      <!-- Reduction diagram -->
-      <div>
-        <div class="viz-h3">Reduction Diagram — Concrete Example</div>
+      <!-- NP Slide 7: Reduction Diagram -->
+      <div class="lesson-slide" id="ns-6">
+        <h4>Reduction Diagram — Full Picture</h4>
         <div class="reduction-diagram">
-          <div><b>Partition instance:</b> S = {3, 3, 2, 2} &nbsp;|&nbsp; sum = 10 &nbsp;|&nbsp; T = 5</div>
+          <div><b>Partition instance:</b> S = {3,3,2,2} &nbsp;|&nbsp; sum=10 &nbsp;|&nbsp; T=5</div>
           <div style="margin:4px 0"><span class="arrow">↓ normalize: divide each by T=5</span></div>
-          <div><b>Bin Packing instance:</b> items = {0.6, 0.6, 0.4, 0.4} &nbsp;|&nbsp; k=2 bins &nbsp;|&nbsp; capacity=1</div>
+          <div><b>Bin Packing instance:</b> items={0.6,0.6,0.4,0.4} &nbsp;|&nbsp; k=2 &nbsp;|&nbsp; capacity=1</div>
           <div style="margin:4px 0"><span class="arrow">↓ solve Bin Packing</span></div>
-          <div>Bin 1: [0.6 + 0.4 = 1.0 ✓] &nbsp; Bin 2: [0.6 + 0.4 = 1.0 ✓] → <span class="yes">YES — fits in 2 bins</span></div>
+          <div>Bin 1: [0.6+0.4=1.0 ✓] &nbsp; Bin 2: [0.6+0.4=1.0 ✓] → <span class="yes">YES — fits in 2 bins</span></div>
           <div style="margin:4px 0"><span class="arrow">↓ denormalize: multiply each by T=5</span></div>
-          <div>Subset A: {3, 2} = 5 = T ✓ &nbsp; Subset B: {3, 2} = 5 = T ✓ → <span class="yes">Partition = YES ✓</span></div>
+          <div>Subset A: {3,2}=5=T ✓ &nbsp; Subset B: {3,2}=5=T ✓ → <span class="yes">Partition = YES ✓</span></div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08)">
             <b>Conclusion:</b> Partition ≤ₚ Bin Packing in O(n). Since Partition is NP-complete (Karp, 1972) and Bin Packing ∈ NP, <span class="yes">Bin Packing is NP-complete. ∎</span>
           </div>
         </div>
-      </div>
-      <div>
-        <div class="viz-h3">Interactive Reduction — Try It Live</div>
-        <div class="banner teal" style="margin-bottom:10px">
-          The <b>Partition NP</b> preset loads items {0.6, 0.6, 0.4, 0.4} — the normalized version of {3,3,2,2}/T=5. Run it in <b>FFD mode</b> and watch it pack into exactly 2 bins, proving the Partition instance has a YES answer.
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+          <div class="info-card">
+            <h4>Why This Proof Matters</h4>
+            <p>It proves Bin Packing is at least as hard as Partition. Since Partition has no known polynomial-time solution, neither does Bin Packing — justifying FFD as our practical choice.</p>
+          </div>
+          <div class="info-card">
+            <h4>Polynomiality of f</h4>
+            <p>Compute T in O(n). Divide each element by T in O(n). Total: O(n). Well within polynomial. The only hard part is solving Bin Packing itself. ✓</p>
+          </div>
         </div>
+      </div>
 
+      <!-- NP Slide 8: Interactive Demo -->
+      <div class="lesson-slide" id="ns-7">
+        <h4>Interactive Demo — See the Reduction Live</h4>
+        <div class="banner teal">
+          The <b>Partition NP</b> preset loads items {0.6,0.6,0.4,0.4} — the normalized version of {3,3,2,2}/T=5. Run it in FFD mode and watch it pack into exactly 2 bins, confirming the reduction works.
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="info-card">
             <h4>Partition Instance</h4>
-            <p>S = {3, 3, 2, 2}<br>
-            Sum = 10, T = 5<br>
-            Question: can S split into two subsets each summing to 5?</p>
-            <p style="margin-top:8px;color:var(--c4);font-weight:700">Answer: YES → {3,2} and {3,2}</p>
+            <p>S = {3,3,2,2}<br>Sum=10, T=5<br>Can S split into two subsets each summing to 5?</p>
+            <p style="margin-top:8px;color:var(--c4);font-weight:700">YES → {3,2} and {3,2}</p>
           </div>
           <div class="info-card">
             <h4>Equivalent Bin Packing</h4>
-            <p>Items = {0.6, 0.6, 0.4, 0.4}<br>
-            k = 2 bins, capacity = 1.0<br>
-            Question: do all items fit in 2 bins?</p>
-            <p style="margin-top:8px;color:var(--c4);font-weight:700">Answer: YES → Bin1=[0.6+0.4] Bin2=[0.6+0.4]</p>
+            <p>Items = {0.6,0.6,0.4,0.4}<br>k=2 bins, capacity=1.0<br>Do all items fit in 2 bins?</p>
+            <p style="margin-top:8px;color:var(--c4);font-weight:700">YES → Bin1=[0.6+0.4] Bin2=[0.6+0.4]</p>
           </div>
         </div>
-
-        <button class="btn btn-success" style="margin-top:10px" onclick="loadPartitionDemo()">
+        <button class="btn btn-success" style="margin-top:4px" onclick="loadPartitionDemo()">
           ▶ Load Partition Preset & Run Reduction Live
         </button>
         <div id="npDemoResult" style="margin-top:10px;display:none" class="banner teal">
-          <b>✓ Reduction confirmed!</b> FFD packed all items into exactly 2 bins. Each bin sums to exactly 1.0. Denormalize: multiply by T=5 → each bin sums to 5 = T. The Partition answer is YES.
-        </div>
-      </div>
-
-      <!-- Why this matters -->
-      <div class="info-grid">
-        <div class="info-card">
-          <h4>Why This Proof Matters</h4>
-          <p>It proves that Bin Packing is at least as hard as Partition. Since Partition has no known polynomial-time solution, neither does Bin Packing. This justifies using FFD as an approximation rather than searching for an exact algorithm.</p>
-        </div>
-        <div class="info-card">
-          <h4>The Polynomial Time Requirement</h4>
-          <p>The reduction must run in polynomial time — otherwise it's cheating. Our construction does two things: compute T (O(n)) and divide each element by T (O(n)). Total: O(n). Well within polynomial. ✓</p>
+          <b>✓ Reduction confirmed!</b> FFD packed all items into exactly 2 bins. Each bin sums to 1.0. Denormalize × T=5 → each group sums to 5 = T. Partition = YES.
         </div>
       </div>
 
@@ -2354,23 +2626,29 @@ body {
 
     <!-- ── COMPLEXITY TAB ── -->
     <div class="viz-panel" id="vp-complexity">
-      <div class="banner amber">
-        <b>Complexity Analysis</b> — time and space complexity of all four algorithms, with growth curves showing why brute force is impractical and FFD is the right choice.
+
+      <!-- Complexity lesson nav -->
+      <div class="lesson-nav">
+        <button class="lesson-btn" id="cxPrev" onclick="cxNav(-1)" disabled>← Back</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+          <div class="lesson-progress" id="cxDots"></div>
+          <span class="lesson-counter" id="cxCounter">1 / 5</span>
+        </div>
+        <button class="lesson-btn next" id="cxNext" onclick="cxNav(1)">Next →</button>
       </div>
 
-      <!-- Complexity table -->
-      <div>
-        <div class="viz-h3">Time & Space Complexity — All Four Algorithms</div>
+      <!-- Slide 1: All Algorithms Complexity -->
+      <div class="lesson-slide active" id="cx-0">
+        <h4>⏱ Time & Space Complexity — All Four Algorithms</h4>
         <div style="overflow-x:auto">
           <table class="cx-table">
             <thead>
               <tr>
                 <th>Algorithm</th>
-                <th>Time Complexity</th>
+                <th>Time</th>
                 <th>Space</th>
                 <th>Optimal?</th>
                 <th>Approximation</th>
-                <th>Why</th>
               </tr>
             </thead>
             <tbody>
@@ -2380,7 +2658,6 @@ body {
                 <td class="good">O(n)</td>
                 <td style="color:var(--c3);font-weight:700">≈ OPT</td>
                 <td class="good">(11/9)·OPT + 6/9</td>
-                <td style="font-size:11.5px;color:var(--muted)">Sort costs O(n log n). First-Fit scan is O(n²) naive but O(n log n) with ordered bins. Sort dominates.</td>
               </tr>
               <tr style="background:rgba(255,255,255,0.01)">
                 <td class="hi">First-Fit</td>
@@ -2388,7 +2665,6 @@ body {
                 <td class="good">O(n)</td>
                 <td style="color:var(--c3);font-weight:700">No</td>
                 <td class="ok">(17/10)·OPT</td>
-                <td style="font-size:11.5px;color:var(--muted)">Each item scans all open bins — O(n) per item × n items = O(n²). No sort needed.</td>
               </tr>
               <tr>
                 <td class="hi">Best-Fit</td>
@@ -2396,7 +2672,6 @@ body {
                 <td class="good">O(n)</td>
                 <td style="color:var(--c3);font-weight:700">No</td>
                 <td class="ok">~(17/10)·OPT</td>
-                <td style="font-size:11.5px;color:var(--muted)">Scans ALL bins per item (not just first fit) — O(n) per item × n items = O(n²). Tighter locally but same asymptotic cost.</td>
               </tr>
               <tr style="background:rgba(255,255,255,0.01)">
                 <td class="hi">Brute Force</td>
@@ -2404,18 +2679,19 @@ body {
                 <td class="good">O(n)</td>
                 <td style="color:var(--c4);font-weight:700">Always ✓</td>
                 <td style="color:var(--c4);font-weight:700">1.00× (exact)</td>
-                <td style="font-size:11.5px;color:var(--muted)">k bins × n items = kⁿ assignments to try. For n=20, k=10: 10²⁰ operations. Exponential — infeasible.</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="learn-tip" style="margin-top:8px">
           <span class="tip-icon">📌</span>
-          <span><b>What does (11/9)·OPT mean?</b> The · means multiply. OPT = the true minimum bins any algorithm could possibly use. So (11/9)·OPT = 1.22 × OPT. If the perfect solution needs 9 bins, FFD uses at most 11. Never more than ~22% above optimal — guaranteed.</span>
+          <span><b>What does (11/9)·OPT mean?</b> The · means multiply. OPT = true minimum bins. (11/9)·OPT = 1.22 × OPT. If optimal needs 9 bins, FFD uses at most 11. Never more than ~22% above optimal — guaranteed.</span>
         </div>
       </div>
-      <div>
-        <div class="viz-h3">Best / Average / Worst Case — FFD</div>
+
+      <!-- Slide 2: FFD Best/Avg/Worst -->
+      <div class="lesson-slide" id="cx-1">
+        <h4>📊 Best / Average / Worst Case — FFD</h4>
         <div style="overflow-x:auto">
           <table class="cx-table">
             <thead>
@@ -2428,33 +2704,35 @@ body {
             </thead>
             <tbody>
               <tr>
-                <td style="color:var(--c4);font-weight:700">Best Case</td>
+                <td style="color:var(--c4);font-weight:700">Best</td>
                 <td class="good">O(n log n)</td>
-                <td style="font-size:11.5px;color:var(--muted)">All items identical size, or all items fit in one bin</td>
-                <td style="font-size:11.5px;color:var(--muted)">Sort still costs O(n log n). Each item placed in first bin immediately — O(1) per placement. Total dominated by sort.</td>
+                <td style="font-size:11.5px;color:var(--muted)">All items identical, or all fit in one bin</td>
+                <td style="font-size:11.5px;color:var(--muted)">Sort costs O(n log n). Each item placed immediately — O(1) per placement. Sort dominates.</td>
               </tr>
               <tr style="background:rgba(255,255,255,0.01)">
-                <td style="color:var(--c3);font-weight:700">Average Case</td>
+                <td style="color:var(--c3);font-weight:700">Average</td>
                 <td class="good">O(n log n)</td>
                 <td style="font-size:11.5px;color:var(--muted)">Random item sizes, sparse bins</td>
-                <td style="font-size:11.5px;color:var(--muted)">Sort O(n log n). Average bin scan is short — most items find a fit quickly. With balanced BST for bin tracking: O(n log n) overall.</td>
+                <td style="font-size:11.5px;color:var(--muted)">Sort O(n log n). Average bin scan is short. With BST for bin tracking: O(n log n) overall.</td>
               </tr>
               <tr>
-                <td style="color:var(--c5);font-weight:700">Worst Case</td>
+                <td style="color:var(--c5);font-weight:700">Worst</td>
                 <td class="ok">O(n²)</td>
-                <td style="font-size:11.5px;color:var(--muted)">Each item scans all existing bins before fitting or opening new one</td>
-                <td style="font-size:11.5px;color:var(--muted)">Naive implementation: O(n) bin scan × n items = O(n²). Optimized with ordered data structure reduces to O(n log n).</td>
+                <td style="font-size:11.5px;color:var(--muted)">Each item scans all bins before fitting</td>
+                <td style="font-size:11.5px;color:var(--muted)">Naive: O(n) scan × n items = O(n²). Optimized with BST reduces to O(n log n).</td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="learn-tip" style="margin-top:8px">
           <span class="tip-icon">📌</span>
-          <span><b>Why does the main table say O(n log n) but worst case says O(n²)?</b> The O(n log n) assumes an optimized implementation using a balanced binary search tree to find fitting bins in O(log n). The O(n²) worst case is for the naive implementation that scans all bins one by one — which is what this tool actually runs. Both are correct depending on the implementation.</span>
+          <span><b>Why does the table say O(n log n) but worst case says O(n²)?</b> O(n log n) assumes a balanced BST to find fitting bins in O(log n). O(n²) is the naive implementation scanning all bins linearly — which is what this tool runs. Both are correct depending on implementation.</span>
         </div>
       </div>
-      <div>
-        <div class="viz-h3">Growth Curve — Operations vs Number of Items</div>
+
+      <!-- Slide 3: Growth Curve -->
+      <div class="lesson-slide" id="cx-2">
+        <h4>📈 Growth Curve — Operations vs Number of Items</h4>
         <div class="chart-box">
           <svg id="growthSvg" style="width:100%;height:230px;display:block"></svg>
           <div class="chart-controls">
@@ -2462,52 +2740,84 @@ body {
             <input type="range" id="growthSlider" min="4" max="20" value="15" oninput="updateGrowth(this.value)"/>
             <span class="chart-leg-item"><span class="chart-leg-line" style="background:var(--c4)"></span>FFD O(n log n)</span>
             <span class="chart-leg-item"><span class="chart-leg-line" style="background:var(--c6)"></span>First-Fit / Best-Fit O(n²)</span>
-            <span class="chart-leg-item"><span class="chart-leg-line" style="background:var(--c5)"></span>Brute Force O(2ⁿ)</span>
+            <span class="chart-leg-item"><span class="chart-leg-line" style="background:var(--c5)"></span>Brute Force O(kⁿ), shown for k=4</span>
           </div>
         </div>
         <div class="learn-tip" style="margin-top:8px">
           <span class="tip-icon">💡</span>
-          <span><b>How to read this chart:</b> The Y-axis shows the number of operations the algorithm performs — higher means slower. The X-axis is the number of items n. Drag the slider to increase n and watch brute force explode while FFD stays nearly flat. At n=20, brute force performs over 1 million operations — at n=30 it would take longer than the age of the universe.</span>
+          <span><b>How to read this chart:</b> Y-axis = number of operations (higher = slower). X-axis = number of items n. Drag the slider and watch brute force explode while FFD stays nearly flat. At n=20, brute force performs over 1 million operations — at n=30 it would take longer than the age of the universe.</span>
         </div>
       </div>
 
-      <!-- Derivation cards -->
-      <div>
-        <div class="viz-h3">Complexity Derivations — How We Get These Numbers</div>
+      <!-- Slide 4: Derivations -->
+      <div class="lesson-slide" id="cx-3">
+        <h4>🔢 Complexity Derivations — How We Get These Numbers</h4>
         <div class="info-grid">
           <div class="info-card">
             <h4>FFD — Why O(n log n)</h4>
             <p><b>Step 1 — Sort:</b> Sorting n items costs O(n log n). This is the dominant cost.<br>
-            <b>Step 2 — Placement:</b> For each of the n items, find the first fitting bin. With a naive scan: O(n) per item = O(n²) total. With a balanced BST tracking bin capacities: O(log n) per item = O(n log n) total.<br>
+            <b>Step 2 — Placement:</b> For each item, find the first fitting bin. Naive scan: O(n) per item = O(n²) total. With a balanced BST: O(log n) per item = O(n log n) total.<br>
             <b>Total: O(n log n)</b> with optimized implementation.</p>
           </div>
           <div class="info-card">
+            <h4>First-Fit & Best-Fit — Why O(n²)</h4>
+            <p><b>No sort step.</b> Items processed in original order.<br>
+            <b>Placement counting argument:</b><br>
+            For each of n items, scan all currently open bins:<br>
+            &nbsp;— In the worst case, all bins are scanned before placing.<br>
+            &nbsp;— At most n bins can ever be open (one per item).<br>
+            &nbsp;— So each placement costs O(n) in the worst case.<br>
+            n items × O(n) per placement = <b>O(n²) total.</b><br><br>
+            With a BST indexed by remaining capacity: O(log n) per placement → O(n log n) total. But this loses the simplicity that makes FF and BF easy to implement.</p>
+          </div>
+          <div class="info-card">
             <h4>Brute Force — Why O(kⁿ)</h4>
-            <p>Each of the n items can go into any of k bins. The number of possible assignments is k × k × k × … (n times) = <b>kⁿ</b>.<br>
-            For n=10, k=4: 4¹⁰ = 1,048,576 assignments.<br>
-            For n=20, k=10: 10²⁰ = 100,000,000,000,000,000,000 assignments.<br>
-            At 10⁹ operations/second: that's 3×10¹⁰ years. This is why NP-complete problems need approximations.</p>
+            <p>Each of n items can go into any of k bins. Total assignments = k × k × … (n times) = <b>kⁿ</b>.<br>
+            n=10, k=4: 4¹⁰ = 1,048,576 assignments.<br>
+            n=20, k=10: 10²⁰ assignments.<br>
+            At 10⁹ ops/sec: 3×10¹⁰ years. This is why NP-complete problems need approximations.</p>
+            <p style="margin-top:8px;font-size:11.5px;color:var(--c3)">⚠ Implementation note: this tool caps Brute Force at 200,000 operations. OPT is guaranteed for n ≤ 12. For larger inputs the result shown is the best found within the cap — not necessarily the true optimal.</p>
           </div>
           <div class="info-card">
             <h4>The (11/9)·OPT Guarantee</h4>
-            <p>Proven by Johnson (1973) and confirmed by Simchi-Levi (1994). If OPT = optimal bins needed, FFD uses at most (11/9)·OPT + 6/9 bins.<br>
-            For large OPT the +6/9 becomes negligible: essentially FFD is within ~22% of optimal.<br>
-            This bound is <b>tight</b> — specific inputs exist where FFD uses exactly 11/9 of OPT.</p>
+            <p>Proven by Johnson (1973), confirmed by Simchi-Levi (1994). FFD uses at most (11/9)·OPT + 6/9 bins.<br>
+            For large OPT the +6/9 is negligible — essentially within ~22% of optimal.<br>
+            This bound is <b>tight</b> — specific inputs achieve exactly 11/9 of OPT.</p>
+            <p style="margin-top:8px;font-size:12px;color:var(--muted)"><b style="color:var(--text)">How the ratio is derived (weighting function method):</b> Johnson's proof assigns a weight w(s) to each item based on its size — Large (&gt;1/2), Medium (1/3–1/2), or Small (≤1/3). It then shows the total weight of FFD's bins cannot exceed (11/9) times the total weight of any optimal packing. The weight function is carefully designed so this inequality holds for all possible inputs.</p>
+            <p style="margin-top:8px;font-size:12px;color:var(--muted)"><b style="color:var(--text)">Monotonicity paradox:</b> Greedy algorithms like FFD are not monotone — adding an extra item or increasing a bin's capacity can sometimes <em>reduce</em> the number of bins used, because the new item triggers a different packing arrangement. This counterintuitive behaviour shows why greedy heuristics are inherently "unstable" and why proving approximation bounds requires careful case analysis rather than simple intuition.</p>
           </div>
           <div class="info-card">
             <h4>Space Complexity — All O(n)</h4>
-            <p>All four algorithms only need to store:<br>
-            • The n item sizes — O(n)<br>
-            • Which bin each item is in — O(n)<br>
-            • The remaining capacity per bin — O(k) ≤ O(n)<br>
-            FFD also needs sorted order but that's still O(n). No algorithm needs more than linear space.</p>
+            <p>All four algorithms only store:<br>
+            • n item sizes — O(n)<br>
+            • Bin assignment per item — O(n)<br>
+            • Remaining capacity per bin — O(k) ≤ O(n)<br>
+            No algorithm needs more than linear space.</p>
           </div>
         </div>
       </div>
 
-      <!-- Why this justifies FFD -->
-      <div class="banner teal">
-        <b>The bottom line:</b> Bin Packing is NP-complete — no polynomial-time exact algorithm is known. Brute force gives the exact answer but is exponential and impractical for n &gt; 10. FFD runs in O(n log n) and is guaranteed within (11/9)·OPT. For any real-world input, FFD is the right choice.
+      <!-- Slide 5: Bottom line -->
+      <div class="lesson-slide" id="cx-4">
+        <h4>✅ The Bottom Line — Why FFD is the Right Choice</h4>
+        <div class="banner teal">
+          Bin Packing is NP-complete — no polynomial-time exact algorithm is known. Brute force gives the exact answer but is exponential and impractical for n &gt; 10. FFD runs in O(n log n) and is guaranteed within (11/9)·OPT. For any real-world input, FFD is the right choice.
+        </div>
+        <div class="worked" style="margin-top:8px">
+          <div><b style="color:var(--c4)">FFD wins because:</b></div>
+          <div>① Fast — O(n log n). For n=1,000,000 items: ~20 million operations. Done in milliseconds.</div>
+          <div>② Provably close — never more than 22% above optimal. For most real inputs, it hits optimal exactly.</div>
+          <div>③ Simple — sort once, then scan. Easy to implement, easy to verify, easy to understand.</div>
+          <div>④ Practical — used in real shipping, cloud allocation, and compiler systems today.</div>
+        </div>
+        <div class="learn-tip" style="margin-top:8px">
+          <span class="tip-icon">💡</span>
+          <span>The counterexample where FFD fails (4 bins vs OPT=3) has a ratio of 1.33 — still well within the 1.22 guarantee. Even when FFD is wrong, it is not very wrong.</span>
+        </div>
+        <div class="learn-tip" style="margin-top:6px">
+          <span class="tip-icon">📌</span>
+          <span><b>When to use Brute Force instead:</b> For n ≤ 8 items, Brute Force is perfectly feasible and gives the exact optimal answer. If you can afford it — use it. FFD is the right choice only when n is large enough that exponential time becomes impractical.</span>
+        </div>
       </div>
 
     </div><!-- /vp-complexity -->
@@ -2703,7 +3013,7 @@ function switchTab(tab, btn) {
   card.querySelectorAll('.viz-panel').forEach(p => p.classList.remove('active'));
   const panel = document.getElementById('vp-' + tab);
   if (panel) panel.classList.add('active');
-  if (tab === 'complexity') drawGrowthChart(parseInt(document.getElementById('growthSlider')?.value||15));
+  if (tab === 'complexity' && cxIdx === 2) drawGrowthChart(parseInt(document.getElementById('growthSlider')?.value||15));
 }
 
 
@@ -3082,12 +3392,12 @@ function drawBins(bins, activeBinIdx) {
       ? `<div style="width:100%;height:${wasteH}px;background:${wColor.replace('rgb(', 'rgba(').replace(')', ',0.18)')};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--font-mono);color:rgba(255,255,255,0.45);font-weight:700;letter-spacing:0.02em">${pct < 100 ? (100-pct)+'% waste' : ''}</div>`
       : '';
 
-    const binH = 180;
+    const binH = vizExpanded ? 280 : 180;
+    const itemFontSize = vizExpanded ? 13 : 10;
     const ih = bin.items.map((item, idx) => {
       const h = Math.max(12, Math.round((item.s / capacity) * binH));
       const isFirst = idx === 0;
-      // First item (renders at bottom due to column-reverse) gets flex:1 to absorb rounding gaps
-      return `<div class="bin-item-block" style="height:${h}px;${isFirst ? 'flex-grow:1;' : ''}background:${item.color}">${item.s}</div>`;
+      return `<div class="bin-item-block" style="height:${h}px;${isFirst ? 'flex-grow:1;' : ''}background:${item.color};font-size:${itemFontSize}px">${item.s}</div>`;
     }).join('');
 
     return `<div class="bin-col">
@@ -3243,7 +3553,7 @@ function runAllAndCompare() {
     ffd: { name: 'FFD',        color: 'var(--c4)', badge: 'rgba(52,211,153,0.15)',  badgeColor: 'var(--c4)',  desc: 'Sort + First-Fit' },
     ff:  { name: 'First-Fit',  color: 'var(--c6)', badge: 'rgba(96,165,250,0.15)',  badgeColor: 'var(--c6)',  desc: 'No sort, first fit' },
     bf2: { name: 'Best-Fit',   color: 'var(--c7)', badge: 'rgba(232,121,249,0.15)', badgeColor: 'var(--c7)',  desc: 'Tightest gap' },
-    bf:  { name: 'Brute Force (OPT)', color: 'var(--c5)', badge: 'rgba(248,113,113,0.15)', badgeColor: 'var(--c5)',  desc: 'Exact optimal' }
+    bf:  { name: 'Brute Force (OPT)', color: 'var(--c5)', badge: 'rgba(248,113,113,0.15)', badgeColor: 'var(--c5)',  desc: 'Exact optimal for n ≤ 12. For larger inputs the operation cap may be reached — result shown is best found, not guaranteed true optimal.' }
   };
 
   // Render 4 result cards with mini bins
@@ -3351,7 +3661,7 @@ function drawGrowthChart(maxN) {
   const Ns = []; for(let n=2;n<=maxN;n++) Ns.push(n);
   const ffd   = Ns.map(n => Math.round(n * Math.log2(n) * 2));
   const ff    = Ns.map(n => n * n);
-  const bf    = Ns.map(n => Math.min(Math.pow(2,n), 2e8));
+  const bf    = Ns.map(n => Math.min(Math.pow(4,n), 2e8));
   const maxY  = Math.min(Math.max(...bf) * 1.05, 2e8);
   const scX   = n => pad.l + (n-2)/(maxN-2) * cW;
   const scY   = y => pad.t + cH - Math.min(y,maxY)/maxY * cH;
@@ -3506,24 +3816,159 @@ function submitQuiz() {
   document.getElementById('quizScoreWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// ── Lesson navigation ──
+const LESSON_COUNT = 9;
+let lessonIdx = 0;
+
+function lessonInit() {
+  const dots = document.getElementById('lessonDots');
+  if (!dots) return;
+  dots.innerHTML = Array.from({length: LESSON_COUNT}, (_,i) =>
+    `<div class="lesson-dot${i===0?' active':''}" onclick="lessonGoto(${i})" title="Section ${i+1}"></div>`
+  ).join('');
+  lessonUpdateUI();
+}
+
+function lessonNav(dir) {
+  lessonGoto(lessonIdx + dir);
+}
+
+function lessonGoto(idx) {
+  if (idx < 0 || idx >= LESSON_COUNT) return;
+  document.getElementById(`ls-${lessonIdx}`)?.classList.remove('active');
+  lessonIdx = idx;
+  document.getElementById(`ls-${lessonIdx}`)?.classList.add('active');
+  lessonUpdateUI();
+  document.getElementById('vp-learn').scrollTop = 0;
+}
+
+function lessonUpdateUI() {
+  document.getElementById('lessonCounter').textContent = `${lessonIdx+1} / ${LESSON_COUNT}`;
+  document.getElementById('lessonPrev').disabled = lessonIdx === 0;
+  document.getElementById('lessonNext').disabled = lessonIdx === LESSON_COUNT - 1;
+  document.querySelectorAll('.lesson-dot').forEach((d,i) => {
+    d.className = 'lesson-dot' + (i === lessonIdx ? ' active' : i < lessonIdx ? ' done' : '');
+  });
+}
+
+// ── NP tab lesson navigation ──
+const NP_COUNT = 8;
+let npIdx = 0;
+
+// ── Complexity tab lesson navigation ──
+const CX_COUNT = 5;
+let cxIdx = 0;
+
+function cxInit() {
+  const dots = document.getElementById('cxDots');
+  if (!dots) return;
+  dots.innerHTML = Array.from({length: CX_COUNT}, (_,i) =>
+    `<div class="lesson-dot${i===0?' active':''}" onclick="cxGoto(${i})" title="Slide ${i+1}"></div>`
+  ).join('');
+  cxUpdateUI();
+}
+
+function cxNav(dir) { cxGoto(cxIdx + dir); }
+
+function cxGoto(idx) {
+  if (idx < 0 || idx >= CX_COUNT) return;
+  document.getElementById(`cx-${cxIdx}`)?.classList.remove('active');
+  cxIdx = idx;
+  document.getElementById(`cx-${cxIdx}`)?.classList.add('active');
+  cxUpdateUI();
+  document.getElementById('vp-complexity').scrollTop = 0;
+  if (cxIdx === 2) drawGrowthChart(parseInt(document.getElementById('growthSlider')?.value||15));
+}
+
+function cxUpdateUI() {
+  document.getElementById('cxCounter').textContent = `${cxIdx+1} / ${CX_COUNT}`;
+  document.getElementById('cxPrev').disabled = cxIdx === 0;
+  document.getElementById('cxNext').disabled = cxIdx === CX_COUNT - 1;
+  document.querySelectorAll('#cxDots .lesson-dot').forEach((d,i) => {
+    d.className = 'lesson-dot' + (i === cxIdx ? ' active' : i < cxIdx ? ' done' : '');
+  });
+}
+
+function npInit() {
+  const dots = document.getElementById('npDots');
+  if (!dots) return;
+  dots.innerHTML = Array.from({length: NP_COUNT}, (_,i) =>
+    `<div class="lesson-dot${i===0?' active':''}" onclick="npGoto(${i})" title="Slide ${i+1}"></div>`
+  ).join('');
+  npUpdateUI();
+}
+
+function npNav(dir) { npGoto(npIdx + dir); }
+
+function npGoto(idx) {
+  if (idx < 0 || idx >= NP_COUNT) return;
+  document.getElementById(`ns-${npIdx}`)?.classList.remove('active');
+  npIdx = idx;
+  document.getElementById(`ns-${npIdx}`)?.classList.add('active');
+  npUpdateUI();
+  document.getElementById('vp-np').scrollTop = 0;
+}
+
+function npUpdateUI() {
+  document.getElementById('npCounter').textContent = `${npIdx+1} / ${NP_COUNT}`;
+  document.getElementById('npPrev').disabled = npIdx === 0;
+  document.getElementById('npNext').disabled = npIdx === NP_COUNT - 1;
+  document.querySelectorAll('#npDots .lesson-dot').forEach((d,i) => {
+    d.className = 'lesson-dot' + (i === npIdx ? ' active' : i < npIdx ? ' done' : '');
+  });
+}
+
+// ── Controls panel collapse ──
+let controlsOpen = true;
+
+// ── Visualizer expand mode ──
+let vizExpanded = false;
+
+function toggleVizExpand() {
+  vizExpanded = !vizExpanded;
+  const wrap = document.querySelector('.app-wrap');
+  const btn  = document.getElementById('vizExpandBtn');
+  wrap.classList.toggle('viz-expanded', vizExpanded);
+  btn.textContent = vizExpanded ? '⛶ Collapse' : '⛶ Expand';
+  // Redraw bins at new size
+  if (steps.length && stepIdx > 0) applyStep(steps[stepIdx - 1]);
+  else drawBins([]);
+}
+
+function toggleControls() {
+  controlsOpen = !controlsOpen;
+  const body = document.getElementById('leftBody');
+  const chevron = document.getElementById('controlsChevron');
+  body.style.display = controlsOpen ? '' : 'none';
+  chevron.style.transform = controlsOpen ? '' : 'rotate(-90deg)';
+}
+
+function openControls() {
+  if (!controlsOpen) toggleControls();
+}
+
 function showLearnQuiz() {
-  // Hide all learn sections and CTAs, show quiz
   document.getElementById('learnCTAs').style.display = 'none';
   document.getElementById('learnQuizWrap').style.display = 'flex';
   document.getElementById('learnQuizWrap').style.flexDirection = 'column';
   document.getElementById('learnQuizWrap').style.gap = '10px';
-  // Scroll learn panel to top
   document.getElementById('vp-learn').scrollTop = 0;
-  // Hide all learn sections
-  document.querySelectorAll('#vp-learn .learn-section').forEach(s => s.style.display = 'none');
-  document.querySelector('#vp-learn .banner').style.display = 'none';
+  // Hide lesson nav and all slides
+  document.querySelector('.lesson-nav').style.display = 'none';
+  document.querySelectorAll('.lesson-slide').forEach(s => { s.style.display = 'none'; });
+  // Show quiz wrapper directly in vp-learn (it's inside ls-8 which we just hid, so move it)
+  document.getElementById('vp-learn').appendChild(document.getElementById('learnQuizWrap'));
 }
 
 function hideLearnQuiz() {
+  // Move quiz back inside ls-8
+  document.getElementById('ls-8').appendChild(document.getElementById('learnQuizWrap'));
   document.getElementById('learnCTAs').style.display = 'grid';
   document.getElementById('learnQuizWrap').style.display = 'none';
-  document.querySelectorAll('#vp-learn .learn-section').forEach(s => s.style.display = '');
-  document.querySelector('#vp-learn .banner').style.display = '';
+  // Restore lesson slides and nav
+  document.querySelectorAll('.lesson-slide').forEach(s => { s.style.display = ''; });
+  document.querySelector('.lesson-nav').style.display = 'flex';
+  document.getElementById(`ls-${lessonIdx}`).classList.add('active');
   document.getElementById('vp-learn').scrollTop = 0;
 }
 
@@ -3542,7 +3987,7 @@ function resetQuiz() {
   document.getElementById('vp-learn').scrollTop = 0;
 }
 
-window.addEventListener('load',()=>{renderPseudo();drawItemsBar();drawBins([]);setStatus('Idle','');setTimeout(()=>drawGrowthChart(15),200);});
+window.addEventListener('load',()=>{renderPseudo();drawItemsBar();drawBins([]);setStatus('Idle','');setTimeout(()=>drawGrowthChart(15),200);lessonInit();npInit();cxInit();});
 window.addEventListener('resize',()=>{
   drawGrowthChart(parseInt(document.getElementById('growthSlider')?.value||15));
   if(steps.length && stepIdx>0) drawBins(steps[stepIdx-1]?.bins||[], steps[stepIdx-1]?.activeBin);
@@ -3555,7 +4000,6 @@ function loadCounterExample() {
   const ffdBtn = document.querySelector('.preset-btn[onclick*="ffdvsopt"]');
   if (ffdBtn) ffdBtn.classList.add('active');
   resetAll(); drawItemsBar();
-  runAllAndCompare();
 }
 
 function loadPartitionDemo() {
